@@ -55,8 +55,8 @@ module Yast
           "Configuration of geo-cluster"
         ),
         "guihandler" => fun_ref(method(:GeoClusterSequence), "any ()"),
-        "initialize" => fun_ref(geo-cluster.method(:Read), "boolean ()"),
-        "finish"     => fun_ref(geo-cluster.method(:Write), "boolean ()"),
+        "initialize" => fun_ref(GeoCluster.method(:Read), "boolean ()"),
+        "finish"     => fun_ref(GeoCluster.method(:Write), "boolean ()"),
         "actions" =>
           # FIXME TODO: fill the functionality description here
           {},

@@ -46,11 +46,11 @@ module Yast
     # Return a modification status
     # @return true if data was modified
     def Modified
-      geo-cluster.Modified
+      GeoCluster.Modified
     end
 
     def ReallyAbort
-      !geo-cluster.Modified || Popup.ReallyAbort(true)
+      !GeoCluster.Modified || Popup.ReallyAbort(true)
     end
 
     def PollAbort
@@ -63,7 +63,7 @@ module Yast
       Wizard.RestoreHelp(Ops.get_string(@HELPS, "read", ""))
       # GeoCluster::SetAbortFunction(PollAbort);
       return :abort if !Confirm.MustBeRoot
-      ret = geo-cluster.Read
+      ret = GeoCluster.Read
       ret ? :next : :abort
     end
 
@@ -72,7 +72,7 @@ module Yast
     def WriteDialog
       Wizard.RestoreHelp(Ops.get_string(@HELPS, "write", ""))
       # GeoCluster::SetAbortFunction(PollAbort);
-      ret = geo-cluster.Write
+      ret = GeoCluster.Write
       ret ? :next : :abort
     end
 
@@ -83,7 +83,7 @@ module Yast
       caption = _("GeoCluster Configuration")
 
       # FIXME
-      summary = geo-cluster.Summary
+      summary = GeoCluster.Summary
       unconfigured = Ops.get_list(summary, 1, [])
       configured = Ops.get_string(summary, 0, "")
 
@@ -142,7 +142,7 @@ module Yast
       # GeoCluster overview dialog caption
       caption = _("GeoCluster Overview")
 
-      overview = geo-cluster.Overview
+      overview = GeoCluster.Overview
 
       # FIXME table header
       contents = nil
