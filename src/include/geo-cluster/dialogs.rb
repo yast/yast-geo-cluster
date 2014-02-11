@@ -27,7 +27,7 @@
 # $Id: dialogs.ycp 27914 2006-02-13 14:32:08Z locilka $
 module Yast
   module GeoClusterDialogsInclude
-    def initialize_dialogs(include_target)
+    def initialize_geo_cluster_dialogs(include_target)
       Yast.import "UI"
 
       textdomain "geo-cluster"
@@ -361,6 +361,7 @@ module Yast
             GeoCluster.global_ticket,
             Convert.to_string(ret)
           )
+	  next
         end
 
         if ret == :ticket_edit
@@ -372,7 +373,9 @@ module Yast
           )
           next if ret == :cancel
           Ops.set(GeoCluster.global_ticket, current, Convert.to_string(ret))
+	  next
         end
+
         if ret == :ticket_del
           current = Convert.to_integer(
             UI.QueryWidget(:ticket_box, :CurrentItem)
@@ -381,6 +384,7 @@ module Yast
             GeoCluster.global_ticket,
             current
           )
+	  next
         end
 
         # abort?
