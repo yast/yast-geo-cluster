@@ -19,7 +19,7 @@ X-SuSE-YaST-AutoInstResource=geo-cluster
 Icon=yast-geo-cluster
 Exec=/sbin/yast2 geo-cluster 
 
-Name=GeoCluster
+Name=Geo Cluster
 GenericName=Configuration Geo Cluster
 X-KDE-SubstituteUID=true
 StartupNotify=true
