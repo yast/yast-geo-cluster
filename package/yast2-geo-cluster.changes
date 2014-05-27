@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue May 27 03:30:12 UTC 2014 - nwang@suse.com
+
+- Using same spec file of ibs and obs.
+- Version 3.1.2 
+
+-------------------------------------------------------------------
 Fri May  9 07:00:42 UTC 2014 - nwang@suse.com
 
 - BNC#875677. Modify desktop file. Change name from CamelCasing to
