@@ -1,7 +1,7 @@
 #
-# spec file for package yast2-cluster
+# spec file for package yast2-geo-cluster
 #
-# Copyright (c) 2013 SUSE LINUX Products GmbH, Nuernberg, Germany.
+# Copyright (c) 2014 SUSE LINUX Products GmbH, Nuernberg, Germany.
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -17,23 +17,26 @@
 
 
 Name:           yast2-geo-cluster
-Version:        3.1.1
+Version:        3.1.2
 Release:        0
-License:	GPL-2.0
-Group:		System/YaST
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 Source0:        %{name}-%{version}.tar.bz2
 
-Requires:	yast2
-BuildRequires:	perl-XML-Writer update-desktop-files yast2 yast2-testsuite
+Requires:       yast2
+BuildRequires:  perl-XML-Writer
+BuildRequires:  update-desktop-files
+BuildRequires:  yast2
 BuildRequires:  yast2-devtools >= 3.1.10
+BuildRequires:  yast2-testsuite
 
-BuildArchitectures:	noarch
+BuildArch:      noarch
 
 Requires:       yast2-ruby-bindings >= 1.0.0
 
-Summary:	Configuration of booth
+Summary:        Configuration of booth
+License:        GPL-2.0
+Group:          System/YaST
 
 %description
 -
@@ -47,7 +50,6 @@ Summary:	Configuration of booth
 %install
 %yast_install
 
-
 %files
 %defattr(-,root,root)
 %dir %{yast_yncludedir}/geo-cluster
@@ -58,3 +60,5 @@ Summary:	Configuration of booth
 %{yast_desktopdir}/geo-cluster.desktop
 %{yast_scrconfdir}/*.scr
 %doc %{yast_docdir}
+
+%changelog
