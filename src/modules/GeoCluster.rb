@@ -334,7 +334,9 @@ module Yast
       udp_ports = [Ops.get(saved_global_conf, "port", "")]
       SuSEFirewallServices.SetNeededPortsAndProtocols(
         "service:booth",
-        { "udp_ports" => udp_ports }
+        # Use the same udp port for tcp.
+        { "tcp_ports" => udp_ports,
+          "udp_ports" => udp_ports }
       )
       SuSEFirewall.Write
       return false if Abort()

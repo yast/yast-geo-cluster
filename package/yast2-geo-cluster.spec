@@ -17,11 +17,13 @@
 
 
 Name:           yast2-geo-cluster
-Version:        3.1.2
+Version:        3.1.3
 Release:        0
 
+%define _fwdefdir /etc/sysconfig/SuSEfirewall2.d/services
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 Source0:        %{name}-%{version}.tar.bz2
+Source1:        geo-cluster.fwd
 
 Requires:       yast2
 BuildRequires:  perl-XML-Writer
@@ -50,6 +52,9 @@ Group:          System/YaST
 %install
 %yast_install
 
+mkdir -p $RPM_BUILD_ROOT/%{_fwdefdir}
+install -m 644 %{S:1} $RPM_BUILD_ROOT/%{_fwdefdir}/booth
+
 %files
 %defattr(-,root,root)
 %dir %{yast_yncludedir}/geo-cluster
@@ -60,5 +65,6 @@ Group:          System/YaST
 %{yast_desktopdir}/geo-cluster.desktop
 %{yast_scrconfdir}/*.scr
 %doc %{yast_docdir}
+%config %{_fwdefdir}/booth
 
 %changelog
