@@ -1,11 +1,6 @@
+/**
+ *
+ */
 .booth
-`ag_ini(
-		`IniAgent(
-			"/etc/booth/booth.conf",
-			$[
-			"options":["global_values","repeat_names","flat"],
-			"comments": ["^[ \t]*#.*", "#.*", "^[ \t]*$"],
-			"params"  : [$["match" : ["^[ \t]*([a-zA-Z0-9_]+)[ \t]*=[ \t]*(.+)[ \t]*$", "%s=%s"]]],
-			]
-			)
-)
+
+`ag_booth ()

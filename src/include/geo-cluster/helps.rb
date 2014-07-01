@@ -32,10 +32,15 @@ module Yast
 
       # All helps are here
       @HELPS = {
+        "confs" => "<p><b>configure files</b><br> \n" +
+          "Geo cluster support Multi confs, like /etc/booth/*.conf \n" +
+            "<p>",
         "booth" => "<p><b>transport</b><br> \n" +
           "transport means which transport layer booth daemon will use<br>\n" +
           "Currently only UDP is supported</p>" +
-          "<p><b>port</b><br>\nThe port that booth daemons will use to talk to each other<p>" +
+          "<p><b>port</b><br>\nThe port that booth daemons will use to talk to each other.<br>\n" +
+            "Defaulte port is 9929.\n" +
+            "<p>" +
           "<p><b>arbitrator</b><br>\n" +
             "The arbitrator IP\n" +
             "<p>" +
@@ -44,7 +49,11 @@ module Yast
             "<p>" +
           "<p><b>ticket</b><br>\n" +
             "The ticket name, which corresponds to a set of resources which can be<br>\n" +
-            "fail-overed among different sites.\n" +
+            "fail-overed among different sites. Use the '__default__' ticket to set<br>\n" +
+            "the default value of ticket\n" +
+            "<p>",
+        "geo-cluster" => "<p><b>Firewall Settings</b><br> \n" +
+          "Enable the port when Firewall is enabled.\n" +
             "<p>"
       } 
 

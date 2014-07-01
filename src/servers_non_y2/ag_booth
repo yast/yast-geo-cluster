@@ -1,0 +1,523 @@
+#!/usr/bin/python
+# -*- coding: utf8 -*-
+
+#
+# Authors:	Nick Wang <nwang@suse.com>
+#
+# File:		ag_booth
+#
+# License:
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#   See the GNU General Public License for more details.
+#
+#   This program is free software; you can redistribute it and/or
+#   modify it under the terms of the GNU General Public License
+#   as published by the Free Software Foundation; either version
+#   2 of the License, or (at your option) any later version.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+#   02111-1307 USA
+#
+
+import re, sys, os
+#FIXME For testing
+#import pprint
+
+from glob import glob
+from copy import deepcopy
+
+from gettext import textdomain
+textdomain("booth")
+
+# YaST geo-cluster ignored variable
+# "site-user", "site-group", "arbitrator-user", "arbitrator-group"
+
+conf_directory = "/etc/booth/"
+
+#docs = {
+#	}
+
+valid_tables = {
+	"port":{ "type":"int", "default":9929 },
+	"transport":{ "valid":("UDP", "TCP"), "ignore_case":True, "default":"UDP" },
+	# Ignore default number, due to __default__ ticket may exist
+	"expire":{ "type":"int" },
+	"acquire-after":{ "type":"int" },
+	"timeout":{ "type":"int" },
+	"retries":{ "type":"int" },
+	}
+
+# conf_files={"conf_name":{"conf_info"}}
+conf_files = {}
+
+single_var = ("port", "arbitrator", "transport", "site-user", "site-group", "arbitrator-user", "arbitrator-group")
+ticket_include = ("ticket", "expire", "acquire-after", "timeout", "retries", "weights", "before-acquire-handler")
+
+#ticket_template = {
+#	"expire":"",
+#	"acquire-after":"",
+#	"timeout":"",
+#	"retries":"",
+#	"weights":"",
+#	"before-acquire-handler":"",
+#	}
+ticket_template = {}
+for key in ticket_include:
+	if key != "ticket":
+		ticket_template[key] = ""
+
+def strip_comments_and_pending_space(line):
+	return line.split('#')[0].strip()
+
+# Print as a list. Module can foreach directly without split to list
+# Try return '"%s"' % convert_list ??
+def generate_list_string(convert_list):
+	ret_str = ""
+
+	if convert_list is None or len(convert_list) == 0:
+		return "nil"
+
+	for i in range(len(convert_list)):
+		if i == 0:
+			ret_str = '["%s"' % (convert_list[i])
+		else:
+			ret_str += ', "%s"' % (convert_list[i])
+	ret_str += ']'
+	return ret_str
+
+# String must split by ";"
+def convert_string_to_list(convert_str):
+	ret_list = []
+
+	if convert_str == "":
+		return ret_list
+
+	tmp_list = convert_str.split(";")
+
+	for i in range(len(tmp_list)):
+		if tmp_list[i] != "":
+			ret_list.append(tmp_list[i])
+
+	return ret_list
+
+def valid_para(para, value):
+	if value[0] == '"':
+		value = value [1:]
+	if value[-1] == '"':
+		value = value [:-1]
+
+
+	if valid_tables.__contains__(para):
+		test_var = valid_tables[para]
+
+		if test_var.__contains__("valid"):
+			if test_var.get("type", "string") == "int":
+				try:
+					value = int(value)
+					if not test_var["valid"].__contains__(value) and test_var.__contains__("default"):
+							value = test_var["default"]
+					elif not test_var["valid"].__contains__(value):
+							value = ""
+				except ValueError:
+					if test_var.__contains__("default"):
+						value = test_var["default"]
+					else:
+						value = ""
+
+			else:
+				if test_var.get("ignore_case", False) == True:
+					if not test_var["valid"].__contains__( value.upper() ) and test_var.__contains__("default"):
+						value = test_var["default"]
+					elif not test_var["valid"].__contains__( value.upper() ):
+						value = ""
+					value = value.upper()
+				else:
+					if not test_var["valid"].__contains__( value ) and test_var.__contains__("default"):
+						value = test_var["default"]
+					elif not test_var["valid"].__contains__( value ):
+						value = ""
+
+		else:
+			if test_var.get("type", "string") == "int":
+				try:
+					value = int(value)
+				except ValueError:
+					if test_var.__contains__("default"):
+						value = test_var["default"]
+					else:
+						value = ""
+
+	return para, value
+
+def file_parser(contents):
+
+	ret_file = {}
+
+	site_list = []
+	all_tickets = {}
+
+	last_ticket = ""
+
+	for line in contents:
+		content = strip_comments_and_pending_space(line)
+		# Ingore comments
+		if content == "":
+			continue
+
+		tmp = content.split("=")
+		# Ingore non standard "=" line
+		if len(tmp) == 1 or tmp[0].strip() == "":
+			continue
+
+		var = tmp[0].strip()
+		value = tmp[1].strip()
+		var, value = valid_para(var, value)
+
+		if var == "site":
+			site_list.append(value)
+		elif single_var.__contains__(var):
+			ret_file[var] = value
+		elif var == "ticket":
+			all_tickets[value] = deepcopy(ticket_template)
+			last_ticket = value
+		elif ticket_include.__contains__(var):
+			if last_ticket == "":
+				continue
+			all_tickets[last_ticket][var] = value
+
+		if not ticket_include.__contains__(var):
+			last_ticket = ""
+
+	# Done reading
+	ret_file["site"] = site_list
+	ret_file["ticket"] = all_tickets
+
+	return ret_file
+
+def print_ticket_to_file(fd, t_name, ticket_group):
+	#fd.write("#%s\n" % (docs.get(t_name, "")))
+	fd.write("ticket = %s\n" % (t_name))
+
+	# ticket group including:
+	# ["timeout", "expire", "acquire-after", "retries", "weights", "before-acquire-handler"]:
+	for var in tuple(ticket_group.keys()):
+		if ticket_group[var] != "":
+			#fd.write("#%s\n\n" % (docs.get(var, "")))
+			fd.write("\t%s = %s\n" % (var, ticket_group[var]))
+
+def load_file(filepath):
+	try:
+		fd=open(filepath, "r")
+		lines= [line.strip() for line in fd.readlines()]
+		fd.close()
+
+		fname = filepath.rsplit("/")[-1][:-5]
+		conf_files[fname] = file_parser(lines)
+	except:
+		pass
+
+	return
+
+def find_confs(path=conf_directory):
+	return glob(path+"*.conf")
+
+def load_booth_conf_list():
+	conf_list = find_confs()
+
+	if len(conf_list) == 0:
+		return
+
+	# Load file info into memory,like:
+	# {'booth2': {'arbitrator': '147.2.207.199',
+	# 			  'ticket': {'8': {'retries': '', 'expire': 50, 'acquire-after': 10, 'weights': '', 'timeout': 123, 'before-acquire-handler':''},
+	# 						 '3': {'retries': '', 'expire': '', 'acquire-after': '', 'weights': '', 'timeout': ''},
+	# 						 'abd': {'retries': '', 'expire': 3, 'acquire-after': 10, 'weights': '', 'timeout': ''},
+	# 						 'hello9': {'retries': '', 'expire': '', 'acquire-after': '', 'weights': '', 'timeout': ''}},
+	# 			  'port': 50,
+	# 			  'transport': 'UDP',
+	# 			  'site': ['147.2.207.200', '147.2.207.201']},
+	#  'booth': {'arbitrator': '147.2.207.199',
+	# 			  'ticket': {'3': {'retries': '', 'expire': '', 'acquire-after': '', 'weights': '', 'timeout': ''}},
+	# 			  'port': 50,
+	# 			  'transport': 'UDP',
+	# 			  'site': ['147.2.207.200']}}
+	for c in conf_list:
+		load_file(c)
+
+	# FIXME for testing
+	#pprint.pprint(conf_files)
+
+	return
+
+class BoothConf_Parser:
+	def __init__(self):
+		load_booth_conf_list()
+
+	def doList(self, path):
+		if len(path) == 0:
+			return '["allconfs"]'
+
+		elif path[0] == "allconfs" and len(path) == 1:
+			clist = tuple(conf_files.keys())
+			return generate_list_string(clist)
+
+		elif path[1] == "ticket" and len(path) == 2:
+			if not conf_files.__contains__(path[0]):
+				return "nil"
+			clist = tuple(conf_files[path[0]]["ticket"].keys())
+			return generate_list_string(clist)
+
+		else:
+			return "nil"
+
+	def doRead(self, path):
+		length = len(path)
+
+		if length == 0 or length == 1:
+			return "nil"
+		elif length == 2:
+			if not conf_files.__contains__(path[0]):
+				return "nil"
+
+			if single_var.__contains__(path[1]):
+				if conf_files[path[0]].get(path[1]) is None:
+					return "nil"
+				return '"%s"' % conf_files[path[0]].get(path[1])
+			elif path[1] == "site":
+				return generate_list_string(conf_files[path[0]].get(path[1], []))
+			else:
+				return "nil"
+
+		elif length == 4 and path[1] == "ticket":
+			# No conf
+			if not conf_files.__contains__(path[0]) or not conf_files[path[0]].__contains__("ticket"):
+				return "nil"
+			# No ticket name
+			if not conf_files[path[0]]["ticket"].__contains__(path[2]):
+				return "nil"
+			# No this para of ticket
+			if not ticket_include.__contains__(path[3]) or path[3] == "ticket":
+				return "nil"
+
+			return '"%s"' % conf_files[path[0]]["ticket"][path[2]].get(path[3])
+		else:
+			return "nil"
+
+	def doWrite(self, path, args):
+		length = len(path)
+
+		# Use Write(.) to dump memory to files
+		if path[0] == "":
+			self.saveFile()
+			return "true"
+		elif length == 1 and conf_files.__contains__(path[0]):
+			# Delete a conf
+			conf_files.pop(path[0],"false")
+			return "true"
+		elif length == 1:
+			return "false"
+
+		if valid_tables.__contains__(path[-1]) and valid_tables[path[-1]].get("type", "string") == "int":
+			try:
+				args = int(args)
+			except ValueError:
+				return "false"
+
+		if length == 2:
+			if not conf_files.__contains__(path[0]):
+				# Create a new conf when not exist
+				conf_files[path[0]] = {}
+
+			if single_var.__contains__(path[1]):
+				conf_files[path[0]][path[1]] = args
+				return "true"
+			# "site" need a string(args) of list, split by ;
+			elif path[1] == "site":
+				conf_files[path[0]][path[1]] = convert_string_to_list(args)
+				return "true"
+			else:
+				return "false"
+
+		elif length == 3 and path[1] == "ticket" and path[2] == "emptyallticket":
+			if not conf_files.__contains__(path[0]):
+				conf_files[path[0]] = { "ticket":{} }
+			conf_files[path[0]]["ticket"] = {}
+			return "true"
+
+		elif length == 4 and path[1] == "ticket":
+			if not conf_files.__contains__(path[0]):
+				# Create a new conf when not exist
+				conf_files[path[0]] = { "ticket":{} }
+
+			if not conf_files[path[0]].__contains__("ticket"):
+				conf_files[path[0]]["ticket"] = {}
+
+			# Create a ticket when not exist
+			if not conf_files[path[0]]["ticket"].__contains__(path[2]):
+				conf_files[path[0]]["ticket"][path[2]] = {}
+
+			# Create a ticket when ticket is empty
+			# All (int) value will be ignore(ValueError) if empty
+			if path[3] == "ticket":
+				conf_files[path[0]]["ticket"][path[2]] = {}
+				return "true"
+
+			# Invalid para of ticket
+			if not ticket_include.__contains__(path[3]):
+				return "false"
+
+			conf_files[path[0]]["ticket"][path[2]][path[3]] = args
+			return "true"
+		else:
+			return "false"
+
+	def saveFile(self):
+		all_old_confs = find_confs()
+		for conf in all_old_confs:
+			try:
+				os.rename("%s" % (conf), "%s.YaST2.bak" % (conf))
+			except OSError:
+				pass
+
+		for cname in conf_files.keys():
+			c_struct = conf_files[cname]
+
+			cfile = cname + ".conf"
+			fd = open("%s%s.YaST2" % (conf_directory, cfile), "w")
+
+			# Single var
+			for i in single_var:
+				if c_struct.__contains__(i):
+					if c_struct[i] != "":
+						#fd.write("#%s\n" % (docs.get(i, "")))
+						fd.write("%s = %s\n" % (i, c_struct[i]))
+
+			# List var, like site
+			for i in ["site"]:
+				if c_struct.__contains__(i):
+					for line in c_struct[i]:
+						#fd.write("#%s\n" % (docs.get(i, "")))
+						fd.write("%s = %s\n" % (i, line))
+
+			# Group var, like ticket
+			for i in ["ticket"]:
+				if c_struct.__contains__(i):
+					# Print "__default__" ticket first
+					if c_struct[i].__contains__("__default__"):
+						print_ticket_to_file(fd, "__default__", c_struct[i]["__default__"])
+
+					for t in c_struct[i].keys():
+						if t == "__default__":
+							continue
+						print_ticket_to_file(fd, t, c_struct[i][t])
+
+			fd.close()
+
+			try:
+				os.rename("%s%s.YaST2" % (conf_directory, cfile), "%s%s" % (conf_directory, cfile))
+			except OSError:
+				pass
+
+class SCR_Agent:
+	def __init__(self):
+		self.command = ""
+		self.args = ""
+		self.path = ""
+
+	def remove_quotation_marks_of_path(self):
+		temp_path = []
+		for i in self.path:
+			if i[0] == '"':
+				i = i[1:]
+			if i[-1] == '"':
+				i = i[:-1]
+			temp_path.append(i)
+		self.path = temp_path
+
+	def SCR_Command (self):
+		# Empty command, args and path in every command
+		self.command = ""
+		self.args = ""
+		self.path = ""
+
+		scr_command = sys.stdin.readline().strip()
+
+		# eg. Read(.xxxconf.tickets.expire, "args")  Write(.)
+		pattern = re.compile('^`?(\w+)\s*(\(([^,]*)(,\s*(.*))?\s*\))?\s*$')
+		# group(1) represent Read, Write, etc...
+		# group(2) path + args
+		# group(3) path
+		# group(4) args with ","
+		# group(5) args with \"\"
+		r = pattern.match(scr_command)
+		if r is not None:
+			try:
+				self.command = r.group(1)
+			except IndexError:
+				return
+
+			try:
+				path = r.group(3)
+				if path[0] == '.':
+					path = path[1:]
+				self.path = path.split('.')
+
+				# In case path have extra ""
+				# Extra "" will be added automatically when path have " "(space)
+				# So " is invalid in a path,otherwise " will be ignored
+				self.remove_quotation_marks_of_path()
+			except IndexError:
+				return
+
+			try:
+				args = r.group(5).strip()
+				if args[0] == '"':
+					args = args[1:]
+				if args[-1] == '"':
+					args = args[:-1]
+				self.args = args
+			except (IndexError, AttributeError):
+				return
+		else:
+			return
+
+    # <-- SCR_Command
+# <-- class SCR_Agent
+
+def main_entry():
+	scr_agent = SCR_Agent ()
+	booth_agent = BoothConf_Parser()
+
+	while True:
+		scr_agent.SCR_Command ()
+
+		#FIXME for testing
+		#print ("===Command %s %s %s" % (scr_agent.command,scr_agent.path,scr_agent.args))
+
+		if (scr_agent.command == 'Dir' ):
+			print (booth_agent.doList(scr_agent.path))
+
+		elif (scr_agent.command == 'Read'):
+			print (booth_agent.doRead(scr_agent.path))
+
+		elif (scr_agent.command == 'Write'):
+			print (booth_agent.doWrite(scr_agent.path, scr_agent.args))
+
+		elif (scr_agent.command == 'result'):
+			break
+
+		else:
+			print ("nil\n")
+		try:
+			sys.stdout.flush()
+		except:
+			break
+# <-- main
+
+if __name__ == "__main__":
+	main_entry()

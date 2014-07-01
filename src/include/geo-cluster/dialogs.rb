@@ -42,45 +42,61 @@ module Yast
       Yast.include include_target, "geo-cluster/helps.rb"
     end
 
-    def cluster_configure_layout
+    def cluster_configure_layout(conf)
       VBox(
+        HBox(
+          InputField(
+            Id(:confname),
+            Opt(:hstretch),
+            _("configuration file"),
+            conf
+          )
+        ),
         HBox(
           InputField(
             Id(:arbitrator),
             Opt(:hstretch),
             _("arbitrator ip"),
-            Ops.get(GeoCluster.global_conf, "arbitrator", "")
+            Ops.get(GeoCluster.global_files[conf], "arbitrator", "")
           ),
           ComboBox(
             Id(:transport),
             Opt(:hstretch, :notify),
             _("transport"),
-            [Ops.get(GeoCluster.global_conf, "transport", "UDP")]
+            [Ops.get(GeoCluster.global_files[conf], "transport", "UDP")]
           ),
           InputField(
             Id(:port),
             Opt(:hstretch),
             _("port"),
-            Ops.get(GeoCluster.global_conf, "port", "")
+            Ops.get(GeoCluster.global_files[conf], "port", "")
           )
         ),
-        HBox(
+        VBox(
           SelectionBox(Id(:site_box), _("site")),
-          Bottom(
-            VBox(
+          Left(
+            HBox(
               PushButton(Id(:site_add), _("Add")),
               PushButton(Id(:site_edit), _("Edit")),
               PushButton(Id(:site_del), _("Delete"))
             )
           )
         ),
-        HBox(
-          SelectionBox(Id(:ticket_box), _("ticket")),
-          Bottom(
-            VBox(
-              PushButton(Id(:ticket_add), _("Add")),
-              PushButton(Id(:ticket_edit), _("Edit")),
-              PushButton(Id(:ticket_del), _("Delete"))
+       VSpacing(1),
+       VBox(
+        Left(Label(_("ticket"))),
+        Table(Id(:ticket_box), Header("ticket", "timeout", "retries", "weights", "expire", "acquire-after", "before-acquire-handler"), []),
+        Left(
+          HBox(
+            PushButton(Id(:ticket_add), "Add"),
+            PushButton(Id(:ticket_edit), "Edit"),
+            PushButton(Id(:ticket_del), "Delete"))
+        )),
+        VBox(
+          Right(
+            HBox(
+              PushButton(Id(:ok), _("OK")),
+              PushButton(Id(:cancel_inner), _("Cancel"))
             )
           )
         )
@@ -116,7 +132,7 @@ module Yast
             ret = val
             break
           else
-            Popup.Message("Please enter valid ip address")
+            Popup.Message(_("Please enter valid ip address"))
           end
         end
         break if ret == :cancel
@@ -125,14 +141,32 @@ module Yast
       deep_copy(ret)
     end
 
-    def ticket_input_dialog(value)
+    def ticket_input_dialog(ticket_hash)
       ret = nil
-      timeout = ""
+
       ticket = ""
-      #parser value first
-      temp = Builtins.splitstring(value, ";")
-      ticket = Ops.get_string(temp, 0, "")
-      timeout = Ops.get_string(temp, 1, "")
+      acquireafter = ""
+      timeout = ""
+      retries = ""
+      weights = ""
+      expire = ""
+      beforeah = ""
+
+      if ticket_hash != {}
+        if ticket_hash.size != 1
+          return {}
+        end
+
+        ticket_hash.each do |tname, value|
+          ticket = tname
+          acquireafter = Ops.get_string(value,"acquire-after","")
+          timeout = Ops.get_string(value,"timeout","")
+          retries = Ops.get_string(value,"retries","")
+          weights = Ops.get_string(value,"weights","")
+          expire = Ops.get_string(value,"expire","")
+          beforeah = Ops.get_string(value,"before-acquire-handler","")
+        end
+      end
 
       UI.OpenDialog(
         MarginBox(
@@ -142,7 +176,20 @@ module Yast
             Label(_("Enter ticket and timeout")),
             HBox(
               InputField(Id(:ticket), Opt(:hstretch), _("ticket"), ticket),
-              InputField(Id(:timeout), Opt(:hstretch), _("timeout"), timeout)
+            ),
+            VSpacing(1),
+            HBox(
+              InputField(Id(:timeout), Opt(:hstretch), _("timeout"), timeout),
+              HSpacing(2),
+              InputField(Id(:retries), Opt(:hstretch), _("retries"), retries),
+              HSpacing(2),
+              InputField(Id(:weights), Opt(:hstretch), _("weights"), weights),
+              HSpacing(2),
+              InputField(Id(:expire), Opt(:hstretch), _("expire"), expire),
+              HSpacing(2),
+              InputField(Id(:acquireafter), Opt(:hstretch), _("acquire-after"), acquireafter),
+              HSpacing(2),
+              InputField(Id(:beforeah), Opt(:hstretch), _("before-acquire-handler"), beforeah)
             ),
             VSpacing(1),
             Right(
@@ -154,42 +201,75 @@ module Yast
           )
         )
       )
+
       while true
+        if ticket != ""
+          UI.ChangeWidget(Id(:ticket), :Enabled, false)
+        end
+
         ret = UI.UserInput
+
         if ret == :ok
-          ticket = Convert.to_string(UI.QueryWidget(:ticket, :Value))
-          timeout = Convert.to_string(UI.QueryWidget(:timeout, :Value))
-          num = Builtins.tointeger(timeout)
-          if num == nil && timeout != ""
+          ticket = UI.QueryWidget(:ticket, :Value).to_s
+
+          timeout = UI.QueryWidget(:timeout, :Value).to_s
+          expire = UI.QueryWidget(:expire, :Value).to_s
+          acquireafter = UI.QueryWidget(:acquireafter, :Value).to_s
+          retries = UI.QueryWidget(:retries, :Value).to_s
+          weights = UI.QueryWidget(:weights, :Value).to_s
+          beforeah = UI.QueryWidget(:beforeah, :Value).to_s
+
+          num_timeout = Builtins.tointeger(timeout)
+          num_expire = Builtins.tointeger(expire)
+          num_acquireafter = Builtins.tointeger(acquireafter)
+          num_retries = Builtins.tointeger(retries)
+          num_weights = Builtins.tointeger(weights)
+
+          if num_timeout == nil && timeout != ""
             Popup.Message(_("timeout is no valid"))
+          elsif num_expire == nil && expire != ""
+            Popup.Message(_("expire is no valid"))
+          elsif num_acquireafter == nil && acquireafter != ""
+            Popup.Message(_("acquireafter is no valid"))
+          elsif num_retries == nil && retries != ""
+            Popup.Message(_("retries is no valid"))
+          elsif retries != "" && num_retries < 3
+            Popup.Message(_("retries values lower than 3 is illegal"))
+          elsif num_weights == nil && weights != ""
+            Popup.Message(_("weights is no valid"))
           elsif ticket == ""
             Popup.Message(_("ticket can not be null"))
           else
+            temp_ticket = {}
+            temp_ticket["timeout"] = timeout
+            temp_ticket["expire"] = expire
+            temp_ticket["acquire-after"] = acquireafter
+            temp_ticket["retries"] = retries
+            temp_ticket["weights"] = weights
+            temp_ticket["before-acquire-handler"] = beforeah
+
+            ret = {ticket => deep_copy(temp_ticket)}
             break
           end
         end
         break if ret == :cancel
       end
       UI.CloseDialog
-      ret = ticket
-      if timeout != "" && ticket != ""
-        ret = Ops.add(Ops.add(Convert.to_string(ret), ";"), timeout)
-      end
       deep_copy(ret)
     end
+
     #fill site_box with global_site
-    def fill_sites_entries
+    def fill_sites_entries(sites)
       i = 0
       ret = 0
       current = 0
       items = []
-      Builtins.foreach(GeoCluster.global_site) do |value|
-        items = Builtins.add(items, Item(Id(i), value))
-        i = Ops.add(i, 1)
+      sites.each do |site|
+        items = items.push(Item(Id(i), site))
+        i += 1
       end
-      current = Convert.to_integer(UI.QueryWidget(:site_box, :CurrentItem))
-      current = 0 if current == nil
-      current = Ops.subtract(i, 1) if Ops.greater_or_equal(current, i)
+      current = UI.QueryWidget(:site_box, :CurrentItem).to_i
+      current = i-1 if current >= i
       UI.ChangeWidget(:site_box, :Items, items)
       UI.ChangeWidget(:site_box, :CurrentItem, current)
 
@@ -197,40 +277,71 @@ module Yast
     end
 
     #fill site_ticket with global_ticket
-    def fill_ticket_entries
+    def fill_ticket_entries(tickets)
       i = 0
       ret = 0
       current = 0
       items = []
-      Builtins.foreach(GeoCluster.global_ticket) do |value|
-        items = Builtins.add(items, Item(Id(i), value))
-        i = Ops.add(i, 1)
+
+      tickets.each do |ticket_hash|
+        ticket_hash.each do |tname, value|
+
+          acquireafter = Ops.get_string(value,"acquire-after","")
+          timeout = Ops.get_string(value,"timeout","")
+          retries = Ops.get_string(value,"retries","")
+          weights = Ops.get_string(value,"weights","")
+          expire = Ops.get_string(value,"expire","")
+          beforeah = Ops.get_string(value,"before-acquire-handler","")
+
+          items = items.push(Item(Id(i), tname, timeout, retries, weights, expire, acquireafter, beforeah))
+          i += 1
+        end
       end
-      current = Convert.to_integer(UI.QueryWidget(:ticket_box, :CurrentItem))
-      current = 0 if current == nil
-      current = Ops.subtract(i, 1) if Ops.greater_or_equal(current, i)
+      current = UI.QueryWidget(:ticket_box, :CurrentItem).to_i
+      current = i-1 if current >= i
       UI.ChangeWidget(:ticket_box, :Items, items)
       UI.ChangeWidget(:ticket_box, :CurrentItem, current)
 
       nil
     end
 
+    #fill confs with global_files
+    def fill_conf_entries
+      i = 0
+      ret = 0
+      current = 0
+      items = []
+      conf_list = []
+      GeoCluster.global_files.each_key do |conf|
+        conf_list.push(conf)
+        items = items.push(Item(Id(i), conf))
+        i += 1
+      end
+      current = UI.QueryWidget(:conf_box, :CurrentItem).to_i
+      current = i-1 if current >= i
+
+      UI.ChangeWidget(:conf_box, :Items, items)
+      UI.ChangeWidget(:conf_box, :CurrentItem, current)
+
+      deep_copy(conf_list)
+    end
+
     def validate
       ret = true
       if Builtins.size(GeoCluster.global_site) == 0
-        Popup.Message("site have to be filled")
+        Popup.Message(_("site have to be filled"))
         return false
       end
 
       if Builtins.size(GeoCluster.global_ticket) == 0
-        Popup.Message("ticket have to be filled")
+        Popup.Message(_("ticket have to be filled"))
         return false
       end
 
       Builtins.foreach(GeoCluster.global_conf) do |key, value|
         if key == "arbitrator"
           if IP.Check(value) != true
-            Popup.Message("arbitrator IP address is invalid!")
+            Popup.Message(_("arbitrator IP address is invalid!"))
             ret = false
             raise Break
           end
@@ -290,6 +401,15 @@ module Yast
           break
         end
 
+        if ret == :wizardTree
+          ret = Convert.to_string(UI.QueryWidget(Id(:wizardTree), :CurrentItem))
+        end
+
+        if Builtins.contains(@DIALOG, Convert.to_string(ret))
+          ret = Builtins.symbolof(Builtins.toterm(ret))
+          break
+        end
+
         if ret == :abort || ret == :cancel
           if ReallyAbort()
             return deep_copy(ret)
@@ -305,7 +425,7 @@ module Yast
     # Dialog for geo-cluster
     # Configure2 dialog
     # @return dialog result
-    def ConfigureDialog
+    def ConfigureDialog(conf)
       # GeoCluster configure2 dialog caption
       caption = _("GeoCluster Configuration")
 
@@ -313,78 +433,272 @@ module Yast
       # 	    Label::BackButton(), Label::NextButton());
 
       ret = nil
+      add_new_conf = false
+
       Wizard.SetContents(
         _("Geo Cluster configure"),
-        cluster_configure_layout,
+        cluster_configure_layout(conf),
         Ops.get_string(@HELPS, "booth", ""),
-        true,
-        true
+        false,
+        false
       )
+
       current = 0
+      temp_site = []
+      temp_ticket = []
+
+      if conf != ""
+        if GeoCluster.global_files[conf]["site"]
+          temp_site = deep_copy(GeoCluster.global_files[conf]["site"])
+        end
+
+        if GeoCluster.global_files[conf]["ticket"]
+          GeoCluster.global_files[conf]["ticket"].each do |tname, value|
+            temp_ticket.push({tname => deep_copy(value)})
+          end
+        end
+      else
+        add_new_conf = true
+      end
+
       while true
-        fill_sites_entries
-        fill_ticket_entries
+        fill_sites_entries(temp_site)
+        fill_ticket_entries(temp_ticket)
+
+        if conf != ""
+          UI.ChangeWidget(Id(:confname), :Enabled, false)
+        elsif conf == "" && GeoCluster.global_files.empty?
+          UI.ChangeWidget(Id(:confname), :Value, "booth")
+        end
+
+        if temp_site.size == 0
+          UI.ChangeWidget(Id(:site_edit), :Enabled, false)
+          UI.ChangeWidget(Id(:site_del), :Enabled, false)
+        else
+          UI.ChangeWidget(Id(:site_edit), :Enabled, true)
+          UI.ChangeWidget(Id(:site_del), :Enabled, true)
+        end
+
+        if temp_ticket.size == 0
+          UI.ChangeWidget(Id(:ticket_edit), :Enabled, false)
+          UI.ChangeWidget(Id(:ticket_del), :Enabled, false)
+        else
+          UI.ChangeWidget(Id(:ticket_edit), :Enabled, true)
+          UI.ChangeWidget(Id(:ticket_del), :Enabled, true)
+        end
+
         ret = UI.UserInput
+
         if ret == :site_add
           ret = ip_address_input_dialog(
             _("Enter an IP address of your site"),
             ""
           )
           next if ret == :cancel
-          GeoCluster.global_site = Builtins.add(
-            GeoCluster.global_site,
-            Convert.to_string(ret)
-          )
+          temp_site.push(ret.to_s)
+          next
         end
 
         if ret == :site_edit
-          current = Convert.to_integer(UI.QueryWidget(:site_box, :CurrentItem))
+          current = UI.QueryWidget(:site_box, :CurrentItem).to_i
           ret = ip_address_input_dialog(
             _("Edit IP address of your site"),
-            Ops.get(GeoCluster.global_site, current, "")
+            temp_site[current]
           )
           next if ret == :cancel
-          Ops.set(GeoCluster.global_site, current, Convert.to_string(ret))
+          temp_site[current] = ret.to_s
+          next
         end
+
         if ret == :site_del
-          current = Convert.to_integer(UI.QueryWidget(:site_box, :CurrentItem))
-          GeoCluster.global_site = Builtins.remove(
-            GeoCluster.global_site,
-            current
-          )
+          current = UI.QueryWidget(:site_box, :CurrentItem).to_i
+          temp_site.delete_at(current)
+          next
         end
 
         if ret == :ticket_add
-          ret = ticket_input_dialog("")
+          ret = ticket_input_dialog({})
           next if ret == :cancel
-          GeoCluster.global_ticket = Builtins.add(
-            GeoCluster.global_ticket,
-            Convert.to_string(ret)
-          )
-	  next
+
+          dup_name = false
+          ret.each_key do |tname|
+            temp_ticket.each do |ticket|
+              if ticket.include?(tname)
+                Popup.Message(_("Ticket name already exist!"))
+                dup_name = true
+                break
+              end
+            end
+          end
+          next if dup_name
+
+          temp_ticket.push(ret)
+          next
         end
 
         if ret == :ticket_edit
-          current = Convert.to_integer(
-            UI.QueryWidget(:ticket_box, :CurrentItem)
-          )
-          ret = ticket_input_dialog(
-            Ops.get(GeoCluster.global_ticket, current, "")
-          )
+          current = UI.QueryWidget(:ticket_box, :CurrentItem).to_i
+
+          ret = ticket_input_dialog(temp_ticket[current])
           next if ret == :cancel
-          Ops.set(GeoCluster.global_ticket, current, Convert.to_string(ret))
-	  next
+          temp_ticket[current] = ret
+          next
         end
 
         if ret == :ticket_del
-          current = Convert.to_integer(
-            UI.QueryWidget(:ticket_box, :CurrentItem)
+          current = UI.QueryWidget(:ticket_box, :CurrentItem).to_i
+          temp_ticket.delete_at(current)
+          next
+        end
+
+        if ret == :wizardTree
+          Wizard.SelectTreeItem("choose_conf")
+          next
+          #ret = Convert.to_string(UI.QueryWidget(Id(:wizardTree), :CurrentItem))
+        end
+
+        next if Builtins.contains(@DIALOG, Convert.to_string(ret))
+
+        # abort?
+        if ret == :abort || ret == :back
+          if ReallyAbort()
+            break
+          else
+            next
+          end
+
+        elsif ret == :ok
+          conf = UI.QueryWidget(:confname, :Value).to_s
+          if conf == ""
+            Popup.Message(_("Configuration name can not be null"))
+            next
+          elsif add_new_conf && GeoCluster.global_files.include?(conf)
+            Popup.Message(_("Configuration name can not be duplicated."))
+            next
+          end
+
+          arbitrator = UI.QueryWidget(:arbitrator, :Value).to_s
+          if IP.Check(arbitrator) != true
+            Popup.Message(_("arbitrator IP address is invalid!"))
+            next
+          end
+
+          port = UI.QueryWidget(:port, :Value).to_s
+          num_port = Builtins.tointeger(port)
+          if num_port == nil || num_port <= 0 || num_port > 65535
+            Popup.Message(_("port is invalid!"))
+            next
+          end
+
+          transport = UI.QueryWidget(:transport, :Value).to_s
+          if transport == ""
+            Popup.Message(_("transport have to be filled!"))
+            next
+          end
+
+          if temp_site.size == 0
+            Popup.Message(_("site have to be filled!"))
+            next
+          end
+
+          if temp_ticket.size == 0
+            Popup.Message(_("ticket have to be filled!"))
+            next
+          end
+
+          GeoCluster.global_files[conf] = {}
+
+          GeoCluster.global_files[conf]["arbitrator"] = arbitrator
+          GeoCluster.global_files[conf]["port"] = port
+          GeoCluster.global_files[conf]["transport"] = transport
+
+          GeoCluster.global_files[conf]["site"] = temp_site
+
+          GeoCluster.global_files[conf]["ticket"] = {}
+          temp_ticket.each do |ticket|
+            GeoCluster.global_files[conf]["ticket"] = GeoCluster.global_files[conf]["ticket"].merge(ticket)
+          end
+
+          if add_new_conf && GeoCluster.global_del_confs.include?(conf)
+            GeoCluster.global_del_confs.delete(conf)
+          end
+          break
+
+        elsif ret == :cancel_inner
+          break
+
+        else
+          Builtins.y2error("unexpected retcode: %1", ret)
+          next
+        end
+      end
+
+      deep_copy(ret)
+    end
+
+    # Dialog for geo-cluster
+    # Choose config file dialog
+    # @return dialog result
+    def ChooseConfigureDialog
+      # GeoCluster choose configure dialog caption
+      caption = _("GeoCluster Configuration Select")
+
+      # Wizard::SetContentsButtons(caption, contents, HELPS["c2"]:"",
+      # 	    Label::BackButton(), Label::NextButton());
+
+      config_box = VBox(
+          SelectionBox(Id(:conf_box), _("Choose configuration file:")),
+          Right(
+            HBox(
+                PushButton(Id(:conf_add), _("Add")),
+                PushButton(Id(:conf_edit), _("Edit")),
+                PushButton(Id(:conf_del), _("Delete"))
+            )
           )
-          GeoCluster.global_ticket = Builtins.remove(
-            GeoCluster.global_ticket,
-            current
-          )
-	  next
+      )
+
+      ret = nil
+      current = 0
+      conf_list = []
+
+      while true
+        Wizard.SelectTreeItem("choose_conf")
+
+        # FIXME ugly work. Better use alias and function, see yast2 drbd.
+        Wizard.SetContents(
+          _("Geo Cluster configure"),
+          config_box,
+          Ops.get_string(@HELPS, "confs", ""),
+          true,
+          true
+        )
+
+        conf_list = fill_conf_entries
+        ret = UI.UserInput
+
+        if ret == :conf_add
+          ret = ConfigureDialog("")
+          next if ret == :cancel
+          next
+        end
+
+        if ret == :conf_edit
+          current = UI.QueryWidget(:conf_box, :CurrentItem).to_i
+          ret = ConfigureDialog(conf_list[current])
+          next if ret == :cancel
+          next
+        end
+
+        if ret == :conf_del
+          current = UI.QueryWidget(:conf_box, :CurrentItem).to_i
+
+          GeoCluster.global_del_confs.push(conf_list[current])
+          GeoCluster.global_files.delete(conf_list[current])
+          next
+        end
+
+        if ret == :wizardTree
+          ret = Convert.to_string(UI.QueryWidget(Id(:wizardTree), :CurrentItem))
         end
 
         # abort?
@@ -395,27 +709,10 @@ module Yast
             next
           end
         elsif ret == :next
-          Ops.set(
-            GeoCluster.global_conf,
-            "arbitrator",
-            Convert.to_string(UI.QueryWidget(:arbitrator, :Value))
-          )
-          Ops.set(
-            GeoCluster.global_conf,
-            "port",
-            Convert.to_string(UI.QueryWidget(:port, :Value))
-          )
-          Ops.set(
-            GeoCluster.global_conf,
-            "transport",
-            Convert.to_string(UI.QueryWidget(:transport, :Value))
-          )
-          val = validate
-          if val == true
-            break
-          else
-            next
-          end
+          break
+        elsif Builtins.contains(@DIALOG, Convert.to_string(ret))
+          ret = Builtins.symbolof(Builtins.toterm(ret))
+          break
         else
           Builtins.y2error("unexpected retcode: %1", ret)
           next
@@ -424,5 +721,6 @@ module Yast
 
       deep_copy(ret)
     end
+
   end
 end

@@ -73,9 +73,11 @@ module Yast
       #   boolean additional_parameter = true;
       # Read all geo-cluster settings
       # @return true on success
-      @global_conf = { "transport" => "UDP", "port" => "", "arbitrator" => "" }
-      @global_site = [""]
-      @global_ticket = [""]
+      @global_files = {}
+      @global_conf_single = { "transport" => "UDP", "port" => "9929", "arbitrator" => "" }
+      @global_conf_list = [ "site" ]
+      @global_conf_ticket = { "expire" => "", "acquire-after" => "", "timeout" => "", "retries" => "", "weights" => "", "before-acquire-handler" => ""}
+      @global_del_confs = []
     end
 
     # Abort function
@@ -162,6 +164,109 @@ module Yast
       deep_copy(stringlist)
     end
 
+    def empty_ticket(ticket)
+      empty = true
+      @global_conf_ticket.each_key do |key|
+        empty = false if ticket[key] != ""
+      end
+      empty
+    end
+
+    def get_a_conf(confname)
+      conf_hash = {}
+
+      temp_path = path(".booth")+Builtins.topath(confname)
+
+      @global_conf_single.each do |key, value|
+        temp_value = SCR.Read(temp_path+Builtins.topath(key))
+        if !temp_value && value
+          temp_value = value
+        end
+        conf_hash[key] = temp_value
+      end
+
+      @global_conf_list.each do |key|
+        conf_hash[key] = SCR.Read(temp_path+Builtins.topath(key))
+      end
+
+      tickets_info = {}
+      temp_ticket_path = temp_path+Builtins.topath("ticket")
+
+      tickets_list = SCR.Dir(temp_ticket_path)
+
+      if tickets_list
+        tickets_list.each do |tname|
+          temp_t = {}
+          @global_conf_ticket.each_key do |key|
+            # Not necessary to use remove_list_quote?
+            temp_t[key] = SCR.Read(temp_ticket_path+Builtins.topath(tname)+Builtins.topath(key))
+          end
+          tickets_info[tname] = temp_t
+        end
+      end
+      conf_hash["ticket"] = tickets_info
+
+      Builtins.y2debug("Get a conf: %1 = %2", confname, conf_hash)
+      conf_hash
+    end
+
+    def save_a_conf(confname)
+      Builtins.y2milestone("Writing configure file %1\n", confname)
+      error_flag = false
+      temp_path = path(".booth")+Builtins.topath(confname)
+      conf = @global_files[confname]
+
+      @global_conf_single.each_key do |key|
+        Builtins.y2milestone("Writing global_conf %1 = %2\n", key, conf[key])
+        ret = SCR.Write((temp_path+Builtins.topath(key)), conf[key])
+        error_flag = true if !ret
+      end
+      (error_flag = false && Report.Error(_("Cannot write global conf settings."))) if error_flag
+
+      # List like site
+      @global_conf_list.each do |key|
+        item_str = ""
+        if conf[key]
+          conf[key].each do |item|
+            if item_str == ""
+              item_str += item
+            else
+              item_str = item_str + ";" + item
+            end
+          end
+        end
+        Builtins.y2milestone("Writing global %1 settings. %2\n", key, item_str)
+        ret = SCR.Write((temp_path+Builtins.topath(key)), item_str)
+        error_flag = true if !ret
+      end
+      (error_flag = false && Report.Error(_("Cannot write global settings."))) if error_flag
+
+      temp_ticket_path = temp_path + Builtins.topath("ticket")
+
+      # Empty all tickets from ag_booth memory
+      SCR.Write((temp_ticket_path + Builtins.topath("emptyallticket")), "")
+
+      conf["ticket"].each do |tname, value|
+        Builtins.y2milestone("Writing global ticket settings - %1\n", tname)
+
+        # Empty (all Int) ticket will be ignore by ag_booth
+        # Create a ticket item
+        if empty_ticket(value)
+          ret = SCR.Write((temp_ticket_path+Builtins.topath(tname)+Builtins.topath("ticket")), "")
+          Builtins.y2milestone("Writing empty ticket - %1 \n", tname)
+          error_flag = true if !ret
+        else
+          @global_conf_ticket.each_key do |key|
+            ret = SCR.Write((temp_ticket_path+Builtins.topath(tname)+Builtins.topath(key)), value[key])
+            Builtins.y2milestone("Writing ticket settings: %1 = %2\n", key, value[key])
+            error_flag = true if !ret
+          end
+        end
+      end
+      (error_flag = false && Report.Error(_("Cannot write global ticket settings."))) if error_flag
+
+      true
+    end
 
     def Read
       # GeoCluster read dialog caption
@@ -171,7 +276,6 @@ module Yast
       steps = 2
 
       sl = 500
-      Builtins.sleep(sl)
 
       # TODO FIXME Names of real stages
       # We do not set help text here, because it was set outside
@@ -188,44 +292,17 @@ module Yast
         ""
       )
 
+      file_list = SCR.Dir(path(".booth.allconfs"))
 
-
-      # read port, arbitrator, transport
-      Builtins.foreach(@global_conf) do |key, value|
-        temp = Convert.convert(
-          SCR.Read(Ops.add(path(".booth"), Builtins.topath(key))),
-          :from => "any",
-          :to   => "list <string>"
-        )
-        Ops.set(@global_conf, key, remove_quote(Ops.get(temp, 0, "")))
+      if file_list
+        # Read all confs into a hash
+        file_list.each do |filename|
+          temp_conf = get_a_conf(filename)
+          @global_files[filename] = temp_conf
+        end
       end
-      # if config file not exsit,set default of global_conf to UDP
-      if Ops.get(@global_conf, "transport", "") == ""
-        Ops.set(@global_conf, "transport", "UDP")
-      end
-      # read sites
-      @global_site = Convert.convert(
-        SCR.Read(Ops.add(path(".booth"), Builtins.topath("site"))),
-        :from => "any",
-        :to   => "list <string>"
-      )
-      @global_site = remove_list_quote(@global_site)
 
-      @global_ticket = Convert.convert(
-        SCR.Read(Ops.add(path(".booth"), Builtins.topath("ticket"))),
-        :from => "any",
-        :to   => "list <string>"
-      )
-      @global_ticket = remove_list_quote(@global_ticket)
-
-      Builtins.y2milestone(
-        "global_conf %1\n" +
-          " global_site %2\n" +
-          " global_ticket %3\n",
-        @global_conf,
-        @global_site,
-        @global_ticket
-      )
+      Builtins.y2debug("Global files = %1", @global_files)
 
       # read
       return false if Abort()
@@ -237,13 +314,13 @@ module Yast
       # read the SuSEfirewall2
       SuSEFirewall.Read
 
-
       return false if Abort()
       # Progress finished
       Progress.NextStage
       Builtins.sleep(sl)
 
       return false if Abort()
+      Progress.Finish
       @modified = false
       true
     end
@@ -251,15 +328,14 @@ module Yast
     # Write all geo-cluster settings
     # @return true on success
     def Write
-      # GeoCluster read dialog caption
+      # GeoCluster write dialog caption
       caption = _("Saving geo-cluster Configuration")
       ret = false
 
       # TODO FIXME And set the right number of stages
-      steps = 3
+      steps = 2
 
       sl = 500
-      Builtins.sleep(sl)
 
       # TODO FIXME Names of real stages
       # We do not set help text here, because it was set outside
@@ -283,40 +359,19 @@ module Yast
         ],
         ""
       )
-      saved_global_conf = deep_copy(@global_conf)
-      # write settings
-      # write global_conf, global_site,  global_ticket to file
-      Builtins.foreach(@global_conf) do |key, value|
-        Ops.set(@global_conf, key, add_quote(value))
-      end
-      # read sites
-      @global_site = add_list_quote(@global_site)
-      @global_ticket = add_list_quote(@global_ticket)
-      Builtins.y2milestone(
-        "Writing global_conf %1\n" +
-          " global_site %2\n" +
-          " global_ticket %3\n",
-        @global_conf,
-        @global_site,
-        @global_ticket
-      )
 
-      Builtins.foreach(@global_conf) do |key, val|
-        write_val = nil
-        write_val = [val] if val != nil
-        ret = SCR.Write(
-          Ops.add(path(".booth"), Builtins.topath(key)),
-          write_val
-        )
-        Report.Error(_("Cannot write global settings.")) if !ret
+      # Remove delete confs from memory
+      # Do not empty all memory in case future extend
+      @global_del_confs.each do |delconf|
+        SCR.Write(path(".booth")+Builtins.topath(delconf),"")
       end
-      #write site
-      ret = SCR.Write(path(".booth.site"), @global_site)
-      Report.Error(_("Cannot write sites settings.")) if !ret
-      #write ticket
-      ret = SCR.Write(path(".booth.ticket"), @global_ticket)
-      Report.Error(_("Cannot write ticket settings.")) if !ret
 
+      # Not necessary to add_(list)_quote
+      @global_files.each_key do |key|
+        save_a_conf(key)
+      end
+
+      SCR.Write(path(".booth"),"")
 
       return false if Abort()
       Progress.NextStage
@@ -326,25 +381,36 @@ module Yast
 
       # run SuSEconfig
       return false if Abort()
-      Progress.NextStage
+
+      # Open all needed port of all confs
+      open_ports = []
+      @global_files.each_key do |file|
+        temp_port = @global_files[file]["port"]
+
+        if !open_ports.include?(temp_port)
+          open_ports.push(temp_port)
+        end
+      end
+
+      SuSEFirewallServices.SetNeededPortsAndProtocols(
+        "service:booth",
+        # Use the same udp port for tcp.
+        { "tcp_ports" => open_ports,
+          "udp_ports" => open_ports }
+      )
+
+      SuSEFirewall.Write
       # Error message
       Report.Error(Message.SuSEConfigFailed) if false
       Builtins.sleep(sl)
 
-      udp_ports = [Ops.get(saved_global_conf, "port", "")]
-      SuSEFirewallServices.SetNeededPortsAndProtocols(
-        "service:booth",
-        # Use the same udp port for tcp.
-        { "tcp_ports" => udp_ports,
-          "udp_ports" => udp_ports }
-      )
-      SuSEFirewall.Write
       return false if Abort()
       # Progress finished
       Progress.NextStage
       Builtins.sleep(sl)
 
       return false if Abort()
+      Progress.Finish
       true
     end
 
@@ -398,9 +464,11 @@ module Yast
     publish :function => :WriteOnly, :type => "boolean ()"
     publish :function => :SetWriteOnly, :type => "void (boolean)"
     publish :function => :SetAbortFunction, :type => "void (boolean ())"
-    publish :variable => :global_conf, :type => "map <string, string>"
-    publish :variable => :global_site, :type => "list <string>"
-    publish :variable => :global_ticket, :type => "list <string>"
+    publish :variable => :global_files, :type => "map <string, map>"
+    publish :variable => :global_conf_single, :type => "map <string, string>"
+    publish :variable => :global_conf_list, :type => "list <string>"
+    publish :variable => :global_conf_ticket, :type => "map <string, string>"
+    publish :variable => :global_del_confs, :type => "list <string>"
     publish :function => :Read, :type => "boolean ()"
     publish :function => :Write, :type => "boolean ()"
     publish :function => :Import, :type => "boolean (map)"

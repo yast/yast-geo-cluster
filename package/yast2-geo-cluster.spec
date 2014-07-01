@@ -17,7 +17,7 @@
 
 
 Name:           yast2-geo-cluster
-Version:        3.1.3
+Version:        3.1.4
 Release:        0
 
 %define _fwdefdir /etc/sysconfig/SuSEfirewall2.d/services
@@ -64,6 +64,7 @@ install -m 644 %{S:1} $RPM_BUILD_ROOT/%{_fwdefdir}/booth
 %{yast_moduledir}/*
 %{yast_desktopdir}/geo-cluster.desktop
 %{yast_scrconfdir}/*.scr
+%{yast_agentdir}/ag_booth
 %doc %{yast_docdir}
 %config %{_fwdefdir}/booth
 
