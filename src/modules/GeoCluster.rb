@@ -74,8 +74,8 @@ module Yast
       # Read all geo-cluster settings
       # @return true on success
       @global_files = {}
-      @global_conf_single = { "transport" => "UDP", "port" => "9929", "arbitrator" => "" }
-      @global_conf_list = [ "site" ]
+      @global_conf_single = { "transport" => "UDP", "port" => "9929" }
+      @global_conf_list = [ "arbitrator", "site" ]
       @global_conf_ticket = { "expire" => "", "acquire-after" => "", "timeout" => "", "retries" => "", "weights" => "", "before-acquire-handler" => ""}
       @global_del_confs = []
     end

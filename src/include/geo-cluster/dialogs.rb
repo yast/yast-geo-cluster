@@ -50,26 +50,30 @@ module Yast
             Opt(:hstretch),
             _("configuration file"),
             conf
-          )
-        ),
-        HBox(
-          InputField(
-            Id(:arbitrator),
-            Opt(:hstretch),
-            _("arbitrator ip"),
-            Ops.get(GeoCluster.global_files[conf], "arbitrator", "")
           ),
+          HSpacing(1),
           ComboBox(
             Id(:transport),
             Opt(:hstretch, :notify),
             _("transport"),
             [Ops.get(GeoCluster.global_files[conf], "transport", "UDP")]
           ),
+          HSpacing(1),
           InputField(
             Id(:port),
             Opt(:hstretch),
             _("port"),
             Ops.get(GeoCluster.global_files[conf], "port", "")
+          )
+        ),
+        VBox(
+          SelectionBox(Id(:arbitrator_box), _("arbitrator")),
+          Left(
+            HBox(
+              PushButton(Id(:arbitrator_add), _("Add")),
+              PushButton(Id(:arbitrator_edit), _("Edit")),
+              PushButton(Id(:arbitrator_del), _("Delete"))
+            )
           )
         ),
         VBox(
@@ -82,16 +86,16 @@ module Yast
             )
           )
         ),
-       VSpacing(1),
-       VBox(
-        Left(Label(_("ticket"))),
-        Table(Id(:ticket_box), Header("ticket", "timeout", "retries", "weights", "expire", "acquire-after", "before-acquire-handler"), []),
-        Left(
-          HBox(
-            PushButton(Id(:ticket_add), "Add"),
-            PushButton(Id(:ticket_edit), "Edit"),
-            PushButton(Id(:ticket_del), "Delete"))
-        )),
+        VBox(
+          Left(Label(_("ticket"))),
+          Table(Id(:ticket_box), Header("ticket", "timeout", "retries", "weights", "expire", "acquire-after", "before-acquire-handler"), []),
+          Left(
+            HBox(
+              PushButton(Id(:ticket_add), "Add"),
+              PushButton(Id(:ticket_edit), "Edit"),
+              PushButton(Id(:ticket_del), "Delete"))
+          )
+        ),
         VBox(
           Right(
             HBox(
@@ -258,6 +262,24 @@ module Yast
       deep_copy(ret)
     end
 
+    #fill arbitrator_box with global_arbitrators
+    def fill_arbitrators_entries(arbitrators)
+      i = 0
+      ret = 0
+      current = 0
+      items = []
+      arbitrators.each do |arbitrator|
+        items = items.push(Item(Id(i), arbitrator))
+        i += 1
+      end
+      current = UI.QueryWidget(:arbitrator_box, :CurrentItem).to_i
+      current = i-1 if current >= i
+      UI.ChangeWidget(:arbitrator_box, :Items, items)
+      UI.ChangeWidget(:arbitrator_box, :CurrentItem, current)
+
+      nil
+    end
+
     #fill site_box with global_site
     def fill_sites_entries(sites)
       i = 0
@@ -276,7 +298,7 @@ module Yast
       nil
     end
 
-    #fill site_ticket with global_ticket
+    #fill ticket_box with global_ticket
     def fill_ticket_entries(tickets)
       i = 0
       ret = 0
@@ -324,47 +346,6 @@ module Yast
       UI.ChangeWidget(:conf_box, :CurrentItem, current)
 
       deep_copy(conf_list)
-    end
-
-    def validate
-      ret = true
-      if Builtins.size(GeoCluster.global_site) == 0
-        Popup.Message(_("site have to be filled"))
-        return false
-      end
-
-      if Builtins.size(GeoCluster.global_ticket) == 0
-        Popup.Message(_("ticket have to be filled"))
-        return false
-      end
-
-      Builtins.foreach(GeoCluster.global_conf) do |key, value|
-        if key == "arbitrator"
-          if IP.Check(value) != true
-            Popup.Message(_("arbitrator IP address is invalid!"))
-            ret = false
-            raise Break
-          end
-        end
-        if key == "port"
-          num = Builtins.tointeger(value)
-          if num != nil && Ops.greater_than(num, 0) &&
-              Ops.less_or_equal(num, 65535)
-            next
-          else
-            Popup.Message(Builtins.sformat("%1 is invalid", key))
-            ret = false
-            raise Break
-          end
-        end
-        if value == ""
-          Popup.Message(Builtins.sformat("%1 should be filled", key))
-          ret = false
-          raise Break
-        end
-      end
-
-      ret
     end
 
     def ServiceDialog
@@ -445,9 +426,14 @@ module Yast
 
       current = 0
       temp_site = []
+      temp_arbitrator = []
       temp_ticket = []
 
       if conf != ""
+        if GeoCluster.global_files[conf]["arbitrator"]
+          temp_arbitrator = deep_copy(GeoCluster.global_files[conf]["arbitrator"])
+        end
+
         if GeoCluster.global_files[conf]["site"]
           temp_site = deep_copy(GeoCluster.global_files[conf]["site"])
         end
@@ -462,6 +448,7 @@ module Yast
       end
 
       while true
+        fill_arbitrators_entries(temp_arbitrator)
         fill_sites_entries(temp_site)
         fill_ticket_entries(temp_ticket)
 
@@ -469,6 +456,14 @@ module Yast
           UI.ChangeWidget(Id(:confname), :Enabled, false)
         elsif conf == "" && GeoCluster.global_files.empty?
           UI.ChangeWidget(Id(:confname), :Value, "booth")
+        end
+
+        if temp_arbitrator.size == 0
+          UI.ChangeWidget(Id(:arbitrator_edit), :Enabled, false)
+          UI.ChangeWidget(Id(:arbitrator_del), :Enabled, false)
+        else
+          UI.ChangeWidget(Id(:arbitrator_edit), :Enabled, true)
+          UI.ChangeWidget(Id(:arbitrator_del), :Enabled, true)
         end
 
         if temp_site.size == 0
@@ -488,6 +483,33 @@ module Yast
         end
 
         ret = UI.UserInput
+
+        if ret == :arbitrator_add
+          ret = ip_address_input_dialog(
+            _("Enter an IP address of your arbitrator"),
+            ""
+          )
+          next if ret == :cancel
+          temp_arbitrator.push(ret.to_s)
+          next
+        end
+
+        if ret == :arbitrator_edit
+          current = UI.QueryWidget(:arbitrator_box, :CurrentItem).to_i
+          ret = ip_address_input_dialog(
+            _("Edit IP address of your arbitrator"),
+            temp_arbitrator[current]
+          )
+          next if ret == :cancel
+          temp_arbitrator[current] = ret.to_s
+          next
+        end
+
+        if ret == :arbitrator_del
+          current = UI.QueryWidget(:arbitrator_box, :CurrentItem).to_i
+          temp_arbitrator.delete_at(current)
+          next
+        end
 
         if ret == :site_add
           ret = ip_address_input_dialog(
@@ -577,12 +599,6 @@ module Yast
             next
           end
 
-          arbitrator = UI.QueryWidget(:arbitrator, :Value).to_s
-          if IP.Check(arbitrator) != true
-            Popup.Message(_("arbitrator IP address is invalid!"))
-            next
-          end
-
           port = UI.QueryWidget(:port, :Value).to_s
           num_port = Builtins.tointeger(port)
           if num_port == nil || num_port <= 0 || num_port > 65535
@@ -593,6 +609,11 @@ module Yast
           transport = UI.QueryWidget(:transport, :Value).to_s
           if transport == ""
             Popup.Message(_("transport have to be filled!"))
+            next
+          end
+
+          if temp_arbitrator.size == 0
+            Popup.Message(_("arbitrator have to be filled!"))
             next
           end
 
@@ -608,10 +629,10 @@ module Yast
 
           GeoCluster.global_files[conf] = {}
 
-          GeoCluster.global_files[conf]["arbitrator"] = arbitrator
           GeoCluster.global_files[conf]["port"] = port
           GeoCluster.global_files[conf]["transport"] = transport
 
+          GeoCluster.global_files[conf]["arbitrator"] = temp_arbitrator
           GeoCluster.global_files[conf]["site"] = temp_site
 
           GeoCluster.global_files[conf]["ticket"] = {}

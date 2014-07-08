@@ -55,7 +55,8 @@ valid_tables = {
 # conf_files={"conf_name":{"conf_info"}}
 conf_files = {}
 
-single_var = ("port", "arbitrator", "transport", "site-user", "site-group", "arbitrator-user", "arbitrator-group")
+single_var = ("port", "transport", "site-user", "site-group", "arbitrator-user", "arbitrator-group")
+list_var = ("arbitrator", "site")
 ticket_include = ("ticket", "expire", "acquire-after", "timeout", "retries", "weights", "before-acquire-handler")
 
 #ticket_template = {
@@ -159,6 +160,7 @@ def file_parser(contents):
 	ret_file = {}
 
 	site_list = []
+	arbitrator_list = []
 	all_tickets = {}
 
 	last_ticket = ""
@@ -178,23 +180,32 @@ def file_parser(contents):
 		value = tmp[1].strip()
 		var, value = valid_para(var, value)
 
-		if var == "site":
-			site_list.append(value)
+		if list_var.__contains__(var):
+			if var == "site":
+				site_list.append(value)
+			elif var == "arbitrator":
+				arbitrator_list.append(value)
+
 		elif single_var.__contains__(var):
 			ret_file[var] = value
+
 		elif var == "ticket":
 			all_tickets[value] = deepcopy(ticket_template)
 			last_ticket = value
+
 		elif ticket_include.__contains__(var):
 			if last_ticket == "":
 				continue
 			all_tickets[last_ticket][var] = value
+		else:
+			continue
 
 		if not ticket_include.__contains__(var):
 			last_ticket = ""
 
 	# Done reading
 	ret_file["site"] = site_list
+	ret_file["arbitrator"] = arbitrator_list
 	ret_file["ticket"] = all_tickets
 
 	return ret_file
@@ -234,6 +245,7 @@ def load_booth_conf_list():
 
 	# Load file info into memory,like:
 	# {'booth2': {'arbitrator': '147.2.207.199',
+	#             'arbitrator': '147.2.207.219',
 	# 			  'ticket': {'8': {'retries': '', 'expire': 50, 'acquire-after': 10, 'weights': '', 'timeout': 123, 'before-acquire-handler':''},
 	# 						 '3': {'retries': '', 'expire': '', 'acquire-after': '', 'weights': '', 'timeout': ''},
 	# 						 'abd': {'retries': '', 'expire': 3, 'acquire-after': 10, 'weights': '', 'timeout': ''},
@@ -288,7 +300,7 @@ class BoothConf_Parser:
 				if conf_files[path[0]].get(path[1]) is None:
 					return "nil"
 				return '"%s"' % conf_files[path[0]].get(path[1])
-			elif path[1] == "site":
+			elif list_var.__contains__(path[1]):
 				return generate_list_string(conf_files[path[0]].get(path[1], []))
 			else:
 				return "nil"
@@ -336,8 +348,8 @@ class BoothConf_Parser:
 			if single_var.__contains__(path[1]):
 				conf_files[path[0]][path[1]] = args
 				return "true"
-			# "site" need a string(args) of list, split by ;
-			elif path[1] == "site":
+			# List string like "site" or "arbitrator" need a string(args) of list, split by ;
+			elif list_var.__contains__(path[1]):
 				conf_files[path[0]][path[1]] = convert_string_to_list(args)
 				return "true"
 			else:
@@ -397,8 +409,8 @@ class BoothConf_Parser:
 						#fd.write("#%s\n" % (docs.get(i, "")))
 						fd.write("%s = %s\n" % (i, c_struct[i]))
 
-			# List var, like site
-			for i in ["site"]:
+			# List var, like arbitrator or site
+			for i in list_var:
 				if c_struct.__contains__(i):
 					for line in c_struct[i]:
 						#fd.write("#%s\n" % (docs.get(i, "")))

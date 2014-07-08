@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Jul  8 03:27:06 UTC 2014 - nwang@suse.com
+
+- BNC3885955. Support multiple arbitrators in one conf.
+- Version 3.1.5
+
+-------------------------------------------------------------------
 Thu Jun 26 05:35:15 UTC 2014 - nwang@suse.com
 
 - BNC#882820 & BNC#882788. Support multiple confs configure in
