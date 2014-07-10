@@ -136,7 +136,7 @@ module Yast
             ret = val
             break
           else
-            Popup.Message(_("Please enter valid ip address"))
+            Popup.Message(_("Please enter a valid ip address"))
           end
         end
         break if ret == :cancel
@@ -230,19 +230,19 @@ module Yast
           num_weights = Builtins.tointeger(weights)
 
           if num_timeout == nil && timeout != ""
-            Popup.Message(_("timeout is no valid"))
+            Popup.Message(_("timeout is invalid"))
           elsif num_expire == nil && expire != ""
-            Popup.Message(_("expire is no valid"))
+            Popup.Message(_("expire is invalid"))
           elsif num_acquireafter == nil && acquireafter != ""
-            Popup.Message(_("acquireafter is no valid"))
+            Popup.Message(_("acquireafter is invalid"))
           elsif num_retries == nil && retries != ""
-            Popup.Message(_("retries is no valid"))
+            Popup.Message(_("retries is invalid"))
           elsif retries != "" && num_retries < 3
             Popup.Message(_("retries values lower than 3 is illegal"))
           elsif num_weights == nil && weights != ""
-            Popup.Message(_("weights is no valid"))
+            Popup.Message(_("weights is invalid"))
           elsif ticket == ""
-            Popup.Message(_("ticket can not be null"))
+            Popup.Message(_("ticket can not be empty"))
           else
             temp_ticket = {}
             temp_ticket["timeout"] = timeout
@@ -592,7 +592,7 @@ module Yast
         elsif ret == :ok
           conf = UI.QueryWidget(:confname, :Value).to_s
           if conf == ""
-            Popup.Message(_("Configuration name can not be null"))
+            Popup.Message(_("Configuration name can not be empty."))
             next
           elsif add_new_conf && GeoCluster.global_files.include?(conf)
             Popup.Message(_("Configuration name can not be duplicated."))

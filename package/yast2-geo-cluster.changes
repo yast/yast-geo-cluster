@@ -1,7 +1,13 @@
 -------------------------------------------------------------------
+Thu Jul 10 03:06:59 UTC 2014 - nwang@suse.com
+
+- BNC#886541. Modify the non standard English message ID.
+- Version 3.1.6
+
+-------------------------------------------------------------------
 Tue Jul  8 03:27:06 UTC 2014 - nwang@suse.com
 
-- BNC3885955. Support multiple arbitrators in one conf.
+- BNC#885955. Support multiple arbitrators in one conf.
 - Version 3.1.5
 
 -------------------------------------------------------------------
