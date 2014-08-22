@@ -43,7 +43,7 @@ module Yast
       @PARENT = {}
 
       @NAME = {
-        "choose_conf" => _("GeoCluster Configurations"),
+        "choose_conf" => _("Geo Cluster Configuration"),
         "firewall"    => _("Firewall Configuration"),
       }
 
@@ -137,7 +137,7 @@ module Yast
     # @return sequence result
     def GeoClusterAutoSequence
       # Initialization dialog caption
-      caption = _("GeoCluster Configuration")
+      caption = _("Geo Cluster Configuration")
       # Initialization dialog contents
       contents = Label(_("Initializing..."))
 

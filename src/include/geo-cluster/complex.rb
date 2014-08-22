@@ -80,7 +80,7 @@ module Yast
     # @return dialog result
     def SummaryDialog
       # GeoCluster summary dialog caption
-      caption = _("GeoCluster Configuration")
+      caption = _("Geo Cluster Configuration")
 
       # FIXME
       summary = GeoCluster.Summary
@@ -140,7 +140,7 @@ module Yast
     # @return dialog result
     def OverviewDialog
       # GeoCluster overview dialog caption
-      caption = _("GeoCluster Overview")
+      caption = _("Geo Cluster Overview")
 
       overview = GeoCluster.Overview
 

@@ -66,26 +66,30 @@ module Yast
             Ops.get(GeoCluster.global_files[conf], "port", "")
           )
         ),
-        VBox(
-          SelectionBox(Id(:arbitrator_box), _("arbitrator")),
-          Left(
-            HBox(
-              PushButton(Id(:arbitrator_add), _("Add")),
-              PushButton(Id(:arbitrator_edit), _("Edit")),
-              PushButton(Id(:arbitrator_del), _("Delete"))
+        HBox(
+          VBox(
+            SelectionBox(Id(:arbitrator_box), _("arbitrator")),
+            Left(
+              HBox(
+                PushButton(Id(:arbitrator_add), _("Add")),
+                PushButton(Id(:arbitrator_edit), _("Edit")),
+                PushButton(Id(:arbitrator_del), _("Delete"))
+              )
             )
-          )
-        ),
-        VBox(
-          SelectionBox(Id(:site_box), _("site")),
-          Left(
-            HBox(
-              PushButton(Id(:site_add), _("Add")),
-              PushButton(Id(:site_edit), _("Edit")),
-              PushButton(Id(:site_del), _("Delete"))
+          ),
+          VSpacing(1),
+          VBox(
+            SelectionBox(Id(:site_box), _("site")),
+            Right(
+              HBox(
+                PushButton(Id(:site_add), _("Add")),
+                PushButton(Id(:site_edit), _("Edit")),
+                PushButton(Id(:site_del), _("Delete"))
+              )
             )
-          )
+          ),
         ),
+        HSpacing(2),
         VBox(
           Left(Label(_("ticket"))),
           Table(Id(:ticket_box), Header("ticket", "timeout", "retries", "weights", "expire", "acquire-after", "before-acquire-handler"), []),
@@ -351,6 +355,7 @@ module Yast
     def ServiceDialog
       ret = nil
       event = {}
+      caption = _("Firewall Configuration")
       firewall_widget = CWMFirewallInterfaces.CreateOpenFirewallWidget(
         {
           #servie:geo-cluster is the  name of /etc/sysconfig/SuSEfirewall2.d/services/geo-cluster
@@ -367,7 +372,7 @@ module Yast
         VStretch()
       )
       Wizard.SetContents(
-        _("Geo Cluster(geo-cluster) firewall configure"),
+        caption,
         firewall_layout,
         Ops.get_string(@HELPS, "geo-cluster", ""),
         true,
@@ -408,7 +413,7 @@ module Yast
     # @return dialog result
     def ConfigureDialog(conf)
       # GeoCluster configure2 dialog caption
-      caption = _("GeoCluster Configuration")
+      caption = _("Geo Cluster Configuration")
 
       # Wizard::SetContentsButtons(caption, contents, HELPS["c2"]:"",
       # 	    Label::BackButton(), Label::NextButton());
@@ -417,7 +422,7 @@ module Yast
       add_new_conf = false
 
       Wizard.SetContents(
-        _("Geo Cluster configure"),
+        caption,
         cluster_configure_layout(conf),
         Ops.get_string(@HELPS, "booth", ""),
         false,
@@ -681,13 +686,14 @@ module Yast
       ret = nil
       current = 0
       conf_list = []
+      caption = _("Geo Cluster Configuration")
 
       while true
         Wizard.SelectTreeItem("choose_conf")
 
         # FIXME ugly work. Better use alias and function, see yast2 drbd.
         Wizard.SetContents(
-          _("Geo Cluster configure"),
+          caption,
           config_box,
           Ops.get_string(@HELPS, "confs", ""),
           true,

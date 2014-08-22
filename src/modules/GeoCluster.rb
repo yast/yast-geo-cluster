@@ -270,7 +270,7 @@ module Yast
 
     def Read
       # GeoCluster read dialog caption
-      caption = _("Initializing geo-cluster Configuration")
+      caption = _("Initializing Geo Cluster Configuration")
 
       # TODO FIXME Set the right number of stages
       steps = 2
@@ -329,7 +329,7 @@ module Yast
     # @return true on success
     def Write
       # GeoCluster write dialog caption
-      caption = _("Saving geo-cluster Configuration")
+      caption = _("Saving Geo Cluster Configuration")
       ret = false
 
       # TODO FIXME And set the right number of stages

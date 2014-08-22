@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Aug 22 03:08:19 UTC 2014 - nwang@suse.com
+
+- BNC#892900. Adjust English Software Strings of window's title.
+- Version 3.1.7
+
+-------------------------------------------------------------------
 Thu Jul 10 03:06:59 UTC 2014 - nwang@suse.com
 
 - BNC#886541. Modify the non standard English message ID.
