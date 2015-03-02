@@ -389,6 +389,11 @@ class BoothConf_Parser:
 			return "false"
 
 	def saveFile(self):
+		if not os.path.isdir(conf_directory):
+			if os.path.isfile(conf_directory):
+				os.remove(conf_directory)
+			os.mkdir(conf_directory)
+
 		all_old_confs = find_confs()
 		for conf in all_old_confs:
 			try:

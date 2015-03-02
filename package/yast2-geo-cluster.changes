@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Mon Mar  2 07:04:23 UTC 2015 - nwang@suse.com
+
+- BNC#920132. Create "/etc/booth/" before save conf file.
+
+-------------------------------------------------------------------
 Thu Dec  4 09:50:13 UTC 2014 - jreidinger@suse.com
 
 - remove X-KDE-Library from desktop file (bnc#899104)
