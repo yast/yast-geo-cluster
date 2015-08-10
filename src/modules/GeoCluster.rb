@@ -74,7 +74,8 @@ module Yast
       # Read all geo-cluster settings
       # @return true on success
       @global_files = {}
-      @global_conf_single = { "transport" => "UDP", "port" => "9929" }
+      # Empty "authfile" means disable authentification
+      @global_conf_single = { "transport" => "UDP", "port" => "9929", "authfile" => "" }
       @global_conf_list = [ "arbitrator", "site" ]
       @global_conf_ticket = { "expire" => "", "acquire-after" => "", "timeout" => "", "retries" => "", "weights" => "", "before-acquire-handler" => ""}
       @global_del_confs = []
@@ -179,6 +180,7 @@ module Yast
 
       @global_conf_single.each do |key, value|
         temp_value = SCR.Read(temp_path+Builtins.topath(key))
+
         if !temp_value && value
           temp_value = value
         end
@@ -218,6 +220,15 @@ module Yast
 
       @global_conf_single.each_key do |key|
         Builtins.y2milestone("Writing global_conf %1 = %2\n", key, conf[key])
+
+        if key == "authfile"
+          # SCR won't write authfile when empty("")
+          # Convert relative path to absolute path
+          if conf[key] != "" && !conf[key].include?("/")
+            conf[key]="/etc/booth/"+conf[key]
+          end
+        end
+
         ret = SCR.Write((temp_path+Builtins.topath(key)), conf[key])
         error_flag = true if !ret
       end

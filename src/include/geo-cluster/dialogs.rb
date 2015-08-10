@@ -42,7 +42,7 @@ module Yast
       Yast.include include_target, "geo-cluster/helps.rb"
     end
 
-    def cluster_configure_layout(conf)
+    def cluster_configure_layout(conf, transport, port)
       VBox(
         HBox(
           InputField(
@@ -56,14 +56,14 @@ module Yast
             Id(:transport),
             Opt(:hstretch, :notify),
             _("transport"),
-            [Ops.get(GeoCluster.global_files[conf], "transport", "UDP")]
+            [transport]
           ),
           HSpacing(1),
           InputField(
             Id(:port),
             Opt(:hstretch),
             _("port"),
-            Ops.get(GeoCluster.global_files[conf], "port", "")
+            port
           )
         ),
         HBox(
@@ -77,7 +77,7 @@ module Yast
               )
             )
           ),
-          VSpacing(1),
+          HSpacing(2),
           VBox(
             SelectionBox(Id(:site_box), _("site")),
             Right(
@@ -89,7 +89,6 @@ module Yast
             )
           ),
         ),
-        HSpacing(2),
         VBox(
           Left(Label(_("ticket"))),
           Table(Id(:ticket_box), Header("ticket", "timeout", "retries", "weights", "expire", "acquire-after", "before-acquire-handler"), []),
@@ -100,19 +99,69 @@ module Yast
               PushButton(Id(:ticket_del), "Delete"))
           )
         ),
+        VSpacing(1),
         VBox(
           Right(
             HBox(
-              PushButton(Id(:ok), _("OK")),
-              PushButton(Id(:cancel_inner), _("Cancel"))
+              PushButton(Id(:authentification), _("Authentification")),
+              HSpacing(2),
+              PushButton(Id(:cancel_inner), _("Ca&ncel")),
+              PushButton(Id(:ok), _("OK"))
             )
           )
         )
       )
     end
 
+    def authentification_layout(authfile)
+      VBox(
+        VSpacing(1),
+        CheckBoxFrame(
+          Id(:secauth),
+          Opt(:hstretch, :notify),
+          _("Enable Security Auth"),
+          true,
+          VBox(
+            InputField(
+              Id(:authfilename),
+              Opt(:hstretch),
+              _("Authentification file"),
+              authfile
+            ),
+            Label(
+              _(
+                "A relative path will be saved in /etc/booth, or using absolute path directly."
+              )
+            ),
+            Label(
+              _(
+                "For a newly created geo cluster, push the button below to generate /etc/booth/<key>."
+              )
+            ),
+            Label(
+              _(
+                "To join a existing geo cluster, please copy /etc/booth/<key> from other node manually."
+              )
+            ),
+            PushButton(Id(:genf), Opt(:notify), _("Generate Authentification Key File"))
+          )
+        ),
+        VStretch(),
+        HSpacing(2),
+        VBox(
+          Right(
+            HBox(
+              PushButton(Id(:basic), _("Basic")),
+              HSpacing(2),
+              PushButton(Id(:cancel_inner), _("Ca&ncel")),
+              PushButton(Id(:ok), _("OK"))
+            )
+          )
+        )
+      )
+    end
 
-    # return `cacel or a string
+    # return `cancel or a string
     def ip_address_input_dialog(title, value)
       ret = nil
 
@@ -419,20 +468,27 @@ module Yast
       # 	    Label::BackButton(), Label::NextButton());
 
       ret = nil
+      cur_page = :basic
       add_new_conf = false
+      authfile_postfix = ".key"
+      booth_dir = "/etc/booth/"
+
+      current = 0
+      authfile = ""
+      temp_site = []
+      temp_arbitrator = []
+      temp_ticket = []
+
+      transport = Ops.get(GeoCluster.global_files[conf], "transport", "UDP")
+      port = Ops.get(GeoCluster.global_files[conf], "port", "")
 
       Wizard.SetContents(
         caption,
-        cluster_configure_layout(conf),
+        cluster_configure_layout(conf, transport, port),
         Ops.get_string(@HELPS, "booth", ""),
         false,
         false
       )
-
-      current = 0
-      temp_site = []
-      temp_arbitrator = []
-      temp_ticket = []
 
       if conf != ""
         if GeoCluster.global_files[conf]["arbitrator"]
@@ -448,6 +504,10 @@ module Yast
             temp_ticket.push({tname => deep_copy(value)})
           end
         end
+
+        if GeoCluster.global_files[conf]["authfile"] != ""
+          authfile = GeoCluster.global_files[conf]["authfile"]
+        end
       else
         add_new_conf = true
       end
@@ -457,7 +517,7 @@ module Yast
         fill_sites_entries(temp_site)
         fill_ticket_entries(temp_ticket)
 
-        if conf != ""
+        if conf != "" && add_new_conf == false
           UI.ChangeWidget(Id(:confname), :Enabled, false)
         elsif conf == "" && GeoCluster.global_files.empty?
           UI.ChangeWidget(Id(:confname), :Value, "booth")
@@ -578,6 +638,105 @@ module Yast
           next
         end
 
+        if ret == :authentification || ret == :ok && cur_page == :basic
+          #Validation check before switch to authentification
+          #Still fall to :authentification or :ok
+          conf = UI.QueryWidget(:confname, :Value).to_s
+          if conf == ""
+            Popup.Message(_("Configuration name can not be empty."))
+            next
+          elsif add_new_conf && GeoCluster.global_files.include?(conf)
+            Popup.Message(_("Configuration name can not be duplicated."))
+            next
+          end
+
+          port = UI.QueryWidget(:port, :Value).to_s
+          num_port = Builtins.tointeger(port)
+          #"5405d4" will show like "5405"
+          if num_port == nil || num_port <= 0 || num_port > 65535
+            Popup.Message(_("port is invalid!"))
+            next
+          end
+
+          transport = UI.QueryWidget(:transport, :Value).to_s
+          if transport == ""
+            Popup.Message(_("transport have to be filled!"))
+            next
+          end
+
+          #Same to UI.QueryWidget(:arbitrator_box, :Value).to_s == ""
+          if temp_arbitrator.size == 0
+            Popup.Message(_("arbitrator have to be filled!"))
+            next
+          end
+
+          if temp_site.size == 0
+            Popup.Message(_("site have to be filled!"))
+            next
+          end
+
+          if temp_ticket.size == 0
+            Popup.Message(_("ticket have to be filled!"))
+            next
+          end
+        end
+
+        if ret == :authentification
+          cur_page = :authentification
+
+          Wizard.SetContents(
+            Ops.get_string(@NAME, "authentification_conf", ""),
+            authentification_layout(authfile),
+            Ops.get_string(@HELPS, "authentification", ""),
+            false,
+            false
+          )
+
+          if authfile == ""
+            UI.ChangeWidget(Id(:secauth), :Value, false)
+            UI.ChangeWidget(Id(:authfilename), :Value, conf+authfile_postfix)
+          end
+        end
+
+        if ret == :basic || ret == :ok && cur_page == :authentification
+          #Validation check before switch to basic
+          #Still fall to :basic or :ok
+          if UI.QueryWidget(Id(:secauth), :Value)
+            authfile = UI.QueryWidget(Id(:authfilename), :Value)
+          else
+            authfile = ""
+          end
+        end
+
+        if ret == :basic
+          cur_page = :basic
+
+          Wizard.SetContents(
+            caption,
+            cluster_configure_layout(conf, transport, port),
+            Ops.get_string(@HELPS, "booth", ""),
+            false,
+            false
+          )
+        end
+
+        if ret == :genf
+          temp_authfile = UI.QueryWidget(Id(:authfilename), :Value).to_s
+          if !temp_authfile.include?("/")
+            temp_authfile = booth_dir+temp_authfile
+          end
+
+          if SCR.Execute(
+              path(".target.bash"),
+              "/usr/sbin/booth-keygen " + temp_authfile
+            ) != 0
+            Popup.Message(_("Failed to create authentification file ") + temp_authfile +
+               "\nNeed to check the directory and remove the exist key file.")
+          else
+            Popup.Message(_("Succeed to created authentification file ") + temp_authfile)
+          end
+        end
+
         if ret == :wizardTree
           Wizard.SelectTreeItem("choose_conf")
           next
@@ -595,47 +754,13 @@ module Yast
           end
 
         elsif ret == :ok
-          conf = UI.QueryWidget(:confname, :Value).to_s
-          if conf == ""
-            Popup.Message(_("Configuration name can not be empty."))
-            next
-          elsif add_new_conf && GeoCluster.global_files.include?(conf)
-            Popup.Message(_("Configuration name can not be duplicated."))
-            next
-          end
-
-          port = UI.QueryWidget(:port, :Value).to_s
-          num_port = Builtins.tointeger(port)
-          if num_port == nil || num_port <= 0 || num_port > 65535
-            Popup.Message(_("port is invalid!"))
-            next
-          end
-
-          transport = UI.QueryWidget(:transport, :Value).to_s
-          if transport == ""
-            Popup.Message(_("transport have to be filled!"))
-            next
-          end
-
-          if temp_arbitrator.size == 0
-            Popup.Message(_("arbitrator have to be filled!"))
-            next
-          end
-
-          if temp_site.size == 0
-            Popup.Message(_("site have to be filled!"))
-            next
-          end
-
-          if temp_ticket.size == 0
-            Popup.Message(_("ticket have to be filled!"))
-            next
-          end
-
           GeoCluster.global_files[conf] = {}
 
           GeoCluster.global_files[conf]["port"] = port
           GeoCluster.global_files[conf]["transport"] = transport
+
+          #Authenitification file. Disable when authfile is ""
+          GeoCluster.global_files[conf]["authfile"] = authfile
 
           GeoCluster.global_files[conf]["arbitrator"] = temp_arbitrator
           GeoCluster.global_files[conf]["site"] = temp_site

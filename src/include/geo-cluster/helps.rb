@@ -35,6 +35,17 @@ module Yast
         "confs" => "<p><b>configure files</b><br> \n" +
           "Geo cluster support Multi confs, like /etc/booth/*.conf \n" +
             "<p>",
+        "authentification" => "<p><b>Authentification configuration</b><br> \n" +
+          "<b>Enable Security Auth</b><br>\n" +
+            "Enable/disable authentification of geo cluster of one conf.</p>" +
+          "<p><b>Authentification file</b><br>\n" +
+            "A relative path will be saved in /etc/booth, or using absolute path directly.</p>" +
+          "<p><b>Generate Authentification Key File</b><br>\n" +
+            "Auto generate authentification file. The key must be between 8 and 64 characters long and" +
+            "be readable only by the file owner. Save as /etc/booth/*.key is recommended.\n" +
+            "Need to sync generated authentification file to all nodes manually or via csync2." +
+            "Generation may fail when file already exist or directory not exist!" +
+            "</p>",
         "booth" => "<p><b>transport</b><br> \n" +
           "transport means which transport layer booth daemon will use<br>\n" +
           "Currently only UDP is supported</p>" +
