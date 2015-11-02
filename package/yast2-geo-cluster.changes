@@ -1,7 +1,13 @@
 -------------------------------------------------------------------
+Mon Nov  2 07:37:43 UTC 2015 - nwang@suse.com
+
+- BNC#952225. Polish the doc for Authentication Configuration.
+- Version 3.1.11
+
+-------------------------------------------------------------------
 Thu Aug 13 02:10:41 UTC 2015 - nwang@suse.com
 
-- BNC#319318. Support authentification. 
+- Fate#319318. Support authentification.
 - Version 3.1.10
 
 -------------------------------------------------------------------

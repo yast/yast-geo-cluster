@@ -39,7 +39,8 @@ module Yast
           "<b>Enable Security Auth</b><br>\n" +
             "Enable/disable authentification of geo cluster of one conf.</p>" +
           "<p><b>Authentification file</b><br>\n" +
-            "A relative path will be saved in /etc/booth, or using absolute path directly.</p>" +
+            "The file will be written to /etc/booth. To write it to a different directory, enter an absolute path.\n" +
+            "To join an existing geo cluster, please copy /etc/booth/<key> from other nodes manually.</p>" +
           "<p><b>Generate Authentification Key File</b><br>\n" +
             "Auto generate authentification file. The key must be between 8 and 64 characters long and" +
             "be readable only by the file owner. Save as /etc/booth/*.key is recommended.\n" +

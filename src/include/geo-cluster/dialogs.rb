@@ -128,21 +128,26 @@ module Yast
               _("Authentification file"),
               authfile
             ),
-            Label(
+            Left(Label(
               _(
-                "A relative path will be saved in /etc/booth, or using absolute path directly."
+                "The file will be written to /etc/booth."
               )
-            ),
-            Label(
+            )),
+            Left(Label(
+              _(
+                "To write it to a different directory, enter an absolute path."
+              )
+            )),
+            Left(Label(
               _(
                 "For a newly created geo cluster, push the button below to generate /etc/booth/<key>."
               )
-            ),
-            Label(
+            )),
+            Left(Label(
               _(
-                "To join a existing geo cluster, please copy /etc/booth/<key> from other node manually."
+                "To join a existing geo cluster, please copy /etc/booth/<key> from other nodes manually."
               )
-            ),
+            )),
             PushButton(Id(:genf), Opt(:notify), _("Generate Authentification Key File"))
           )
         ),
