@@ -44,7 +44,7 @@ module Yast
 
       @NAME = {
         "choose_conf" => _("Geo Cluster Configuration"),
-        "authentification_conf" => _("Authentification Configuration"),
+        "authentication_conf" => _("Authentication Configuration"),
         "firewall"    => _("Firewall Configuration"),
       }
 

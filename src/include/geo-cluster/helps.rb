@@ -35,16 +35,16 @@ module Yast
         "confs" => "<p><b>configure files</b><br> \n" +
           "Geo cluster support Multi confs, like /etc/booth/*.conf \n" +
             "<p>",
-        "authentification" => "<p><b>Authentification configuration</b><br> \n" +
+        "authentication" => "<p><b>Authentication configuration</b><br> \n" +
           "<b>Enable Security Auth</b><br>\n" +
-            "Enable/disable authentification of geo cluster of one conf.</p>" +
-          "<p><b>Authentification file</b><br>\n" +
+            "Enable/disable authentication of geo cluster of one conf.</p>" +
+          "<p><b>Authentication file</b><br>\n" +
             "The file will be written to /etc/booth. To write it to a different directory, enter an absolute path.\n" +
             "To join an existing geo cluster, please copy /etc/booth/<key> from other nodes manually.</p>" +
-          "<p><b>Generate Authentification Key File</b><br>\n" +
-            "Auto generate authentification file. The key must be between 8 and 64 characters long and" +
+          "<p><b>Generate Authentication Key File</b><br>\n" +
+            "Auto generate authentication file. The key must be between 8 and 64 characters long and" +
             "be readable only by the file owner. Save as /etc/booth/*.key is recommended.\n" +
-            "Need to sync generated authentification file to all nodes manually or via csync2." +
+            "Need to sync generated authentication file to all nodes manually or via csync2." +
             "Generation may fail when file already exist or directory not exist!" +
             "</p>",
         "booth" => "<p><b>transport</b><br> \n" +

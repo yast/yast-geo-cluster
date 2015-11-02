@@ -103,7 +103,7 @@ module Yast
         VBox(
           Right(
             HBox(
-              PushButton(Id(:authentification), _("Authentification")),
+              PushButton(Id(:authentication), _("Authentication")),
               HSpacing(2),
               PushButton(Id(:cancel_inner), _("Ca&ncel")),
               PushButton(Id(:ok), _("OK"))
@@ -113,7 +113,7 @@ module Yast
       )
     end
 
-    def authentification_layout(authfile)
+    def authentication_layout(authfile)
       VBox(
         VSpacing(1),
         CheckBoxFrame(
@@ -125,7 +125,7 @@ module Yast
             InputField(
               Id(:authfilename),
               Opt(:hstretch),
-              _("Authentification file"),
+              _("Authentication file"),
               authfile
             ),
             Left(Label(
@@ -148,7 +148,7 @@ module Yast
                 "To join a existing geo cluster, please copy /etc/booth/<key> from other nodes manually."
               )
             )),
-            PushButton(Id(:genf), Opt(:notify), _("Generate Authentification Key File"))
+            PushButton(Id(:genf), Opt(:notify), _("Generate Authentication Key File"))
           )
         ),
         VStretch(),
@@ -643,9 +643,9 @@ module Yast
           next
         end
 
-        if ret == :authentification || ret == :ok && cur_page == :basic
-          #Validation check before switch to authentification
-          #Still fall to :authentification or :ok
+        if ret == :authentication || ret == :ok && cur_page == :basic
+          #Validation check before switch to authentication
+          #Still fall to :authentication or :ok
           conf = UI.QueryWidget(:confname, :Value).to_s
           if conf == ""
             Popup.Message(_("Configuration name can not be empty."))
@@ -686,13 +686,13 @@ module Yast
           end
         end
 
-        if ret == :authentification
-          cur_page = :authentification
+        if ret == :authentication
+          cur_page = :authentication
 
           Wizard.SetContents(
-            Ops.get_string(@NAME, "authentification_conf", ""),
-            authentification_layout(authfile),
-            Ops.get_string(@HELPS, "authentification", ""),
+            Ops.get_string(@NAME, "authentication_conf", ""),
+            authentication_layout(authfile),
+            Ops.get_string(@HELPS, "authentication", ""),
             false,
             false
           )
@@ -703,7 +703,7 @@ module Yast
           end
         end
 
-        if ret == :basic || ret == :ok && cur_page == :authentification
+        if ret == :basic || ret == :ok && cur_page == :authentication
           #Validation check before switch to basic
           #Still fall to :basic or :ok
           if UI.QueryWidget(Id(:secauth), :Value)
@@ -735,10 +735,10 @@ module Yast
               path(".target.bash"),
               "/usr/sbin/booth-keygen " + temp_authfile
             ) != 0
-            Popup.Message(_("Failed to create authentification file ") + temp_authfile +
+            Popup.Message(_("Failed to create authentication file ") + temp_authfile +
                "\nNeed to check the directory and remove the exist key file.")
           else
-            Popup.Message(_("Succeed to created authentification file ") + temp_authfile)
+            Popup.Message(_("Succeed to created authentication file ") + temp_authfile)
           end
         end
 
