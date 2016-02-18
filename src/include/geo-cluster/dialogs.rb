@@ -738,7 +738,7 @@ module Yast
             Popup.Message(_("Failed to create authentication file ") + temp_authfile +
                "\nNeed to check the directory and remove the exist key file.")
           else
-            Popup.Message(_("Succeed to created authentication file ") + temp_authfile)
+            Popup.Message(_("Authentication file ") + temp_authfile + _(" created successfully."))
           end
         end
 
