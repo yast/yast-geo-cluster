@@ -406,6 +406,16 @@ module Yast
       deep_copy(conf_list)
     end
 
+    def configuration_button_switch
+      if GeoCluster.global_files.size == 0
+        UI.ChangeWidget(Id(:conf_edit), :Enabled, false)
+        UI.ChangeWidget(Id(:conf_del), :Enabled, false)
+      else
+        UI.ChangeWidget(Id(:conf_edit), :Enabled, true)
+        UI.ChangeWidget(Id(:conf_del), :Enabled, true)
+      end
+    end
+
     def ServiceDialog
       ret = nil
       event = {}
@@ -831,6 +841,7 @@ module Yast
         )
 
         conf_list = fill_conf_entries
+        configuration_button_switch
         ret = UI.UserInput
 
         if ret == :conf_add
