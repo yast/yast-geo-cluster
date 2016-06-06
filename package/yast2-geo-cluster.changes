@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Jun  6 08:21:29 UTC 2016 - igonzalezsosa@suse.com
+
+- Stop generating autodocs (fate#320356)
+- Version 3.1.14
+
+-------------------------------------------------------------------
 Mon May 30 08:39:27 UTC 2016 - nwang@suse.com
 
 - bsc#982166. Disable "Edit" and "Del" buttons when no conf.
