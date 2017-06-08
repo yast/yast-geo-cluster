@@ -17,3 +17,25 @@ tmp
 _yardoc
 
 package/*.tar.bz2
+
+Makefile
+/Makefile.am
+Makefile.am.common
+Makefile.in
+aclocal.m4
+autodocs-cc-base.ami
+autodocs-cc-off.ami
+autodocs-cc.ami
+autodocs-ycp.ami
+autom4te.cache/
+config.guess
+config.log
+config.status
+config.sub
+configure
+configure.ac
+doc
+geo-cluster.pot
+install-sh
+missing
+pluglib-bindings.ami
