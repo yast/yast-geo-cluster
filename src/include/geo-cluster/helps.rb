@@ -63,6 +63,12 @@ module Yast
             "The ticket name, which corresponds to a set of resources which can be<br>\n" +
             "fail-overed among different sites. Use the '__default__' ticket to set<br>\n" +
             "the default value of ticket\n" +
+            "<p>" +
+          "<p><b>ticket mode</b><br>\n" +
+            "Specifies if the ticket is MANUAL or AUTOMATIC. <br>Default mode is AUTOMATIC. <br>\n" +
+            "Notice: Automatic ticket management provided by Raft algorithm doesn't apply " +
+            "to manually controlled tickets. In particular, there is no elections, " +
+            "automatic failover procedures, and term expiration." +
             "<p>",
         "geo-cluster" => "<p><b>Firewall Settings</b><br> \n" +
           "Enable the port when Firewall is enabled.\n" +

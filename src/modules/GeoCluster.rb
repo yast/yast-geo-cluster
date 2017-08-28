@@ -77,7 +77,7 @@ module Yast
       # Empty "authfile" means disable authentication
       @global_conf_single = { "transport" => "UDP", "port" => "9929", "authfile" => "" }
       @global_conf_list = [ "arbitrator", "site" ]
-      @global_conf_ticket = { "expire" => "", "acquire-after" => "", "timeout" => "", "retries" => "", "weights" => "", "before-acquire-handler" => ""}
+      @global_conf_ticket = { "expire" => "", "acquire-after" => "", "timeout" => "", "retries" => "", "weights" => "", "before-acquire-handler" => "", "mode" => "" }
       @global_del_confs = []
     end
 
