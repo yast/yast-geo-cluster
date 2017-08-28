@@ -45,6 +45,7 @@ conf_directory = "/etc/booth/"
 valid_tables = {
 	"port":{ "type":"int", "default":9929 },
 	"transport":{ "valid":("UDP", "TCP"), "ignore_case":True, "default":"UDP" },
+	"mode":{ "valid":("MANUAL", "AUTOMATIC"), "ignore_case":True, "default":"AUTOMATIC" },
 	# Ignore default number, due to __default__ ticket may exist
 	"expire":{ "type":"int" },
 	"acquire-after":{ "type":"int" },
@@ -57,7 +58,7 @@ conf_files = {}
 
 single_var = ("port", "transport", "site-user", "site-group", "arbitrator-user", "arbitrator-group", "authfile")
 list_var = ("arbitrator", "site")
-ticket_include = ("ticket", "expire", "acquire-after", "timeout", "retries", "weights", "before-acquire-handler")
+ticket_include = ("ticket", "expire", "acquire-after", "timeout", "retries", "weights", "before-acquire-handler", "mode")
 
 #ticket_template = {
 #	"expire":"",
@@ -66,6 +67,7 @@ ticket_include = ("ticket", "expire", "acquire-after", "timeout", "retries", "we
 #	"retries":"",
 #	"weights":"",
 #	"before-acquire-handler":"",
+#	"mode":"manual",
 #	}
 ticket_template = {}
 for key in ticket_include:
@@ -218,7 +220,7 @@ def print_ticket_to_file(fd, t_name, ticket_group):
 	fd.write("ticket = %s\n" % (t_name))
 
 	# ticket group including:
-	# ["timeout", "expire", "acquire-after", "retries", "weights", "before-acquire-handler"]:
+	# ["timeout", "expire", "acquire-after", "retries", "weights", "before-acquire-handler", "mode"]:
 	for var in tuple(ticket_group.keys()):
 		if ticket_group[var] != "":
 			#fd.write("#%s\n\n" % (docs.get(var, "")))
@@ -251,14 +253,14 @@ def load_booth_conf_list():
 	# {'booth2': {'arbitrator': '147.2.207.199',
 	#             'arbitrator': '147.2.207.219',
 	# 			  'ticket': {'8': {'retries': '', 'expire': 50, 'acquire-after': 10, 'weights': '', 'timeout': 123, 'before-acquire-handler':''},
-	# 						 '3': {'retries': '', 'expire': '', 'acquire-after': '', 'weights': '', 'timeout': ''},
-	# 						 'abd': {'retries': '', 'expire': 3, 'acquire-after': 10, 'weights': '', 'timeout': ''},
-	# 						 'hello9': {'retries': '', 'expire': '', 'acquire-after': '', 'weights': '', 'timeout': ''}},
+	# 						 '3': {'retries': '', 'expire': '', 'acquire-after': '', 'weights': '', 'timeout': '', 'mode': ''},
+	# 						 'abd': {'retries': '', 'expire': 3, 'acquire-after': 10, 'weights': '', 'timeout': '', 'mode': 'AUTOMATIC'},
+	# 						 'hello9': {'retries': '', 'expire': '', 'acquire-after': '', 'weights': '', 'timeout': '', 'mode': 'MANUAL'}},
 	# 			  'port': 50,
 	# 			  'transport': 'UDP',
 	# 			  'site': ['147.2.207.200', '147.2.207.201']},
 	#  'booth': {'arbitrator': '147.2.207.199',
-	# 			  'ticket': {'3': {'retries': '', 'expire': '', 'acquire-after': '', 'weights': '', 'timeout': ''}},
+	# 			  'ticket': {'3': {'retries': '', 'expire': '', 'acquire-after': '', 'weights': '', 'timeout': '', 'mode':'AUTOMATIC'}},
 	# 			  'port': 50,
 	# 			  'transport': 'UDP',
 	#			  'authfile': 'booth.key',

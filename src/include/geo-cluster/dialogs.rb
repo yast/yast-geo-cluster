@@ -91,7 +91,7 @@ module Yast
         ),
         VBox(
           Left(Label(_("ticket"))),
-          Table(Id(:ticket_box), Header("ticket", "timeout", "retries", "weights", "expire", "acquire-after", "before-acquire-handler"), []),
+          Table(Id(:ticket_box), Header("ticket", "mode", "timeout", "retries", "weights", "expire", "acquire-after", "before-acquire-handler"), []),
           Left(
             HBox(
               PushButton(Id(:ticket_add), "Add"),
@@ -213,6 +213,7 @@ module Yast
       weights = ""
       expire = ""
       beforeah = ""
+      ticketmode = ""
 
       if ticket_hash != {}
         if ticket_hash.size != 1
@@ -227,7 +228,16 @@ module Yast
           weights = Ops.get_string(value,"weights","")
           expire = Ops.get_string(value,"expire","")
           beforeah = Ops.get_string(value,"before-acquire-handler","")
+          ticketmode = Ops.get_string(value,"mode","")
         end
+      end
+
+      # Since ag_booth only return "MANUAL"/"AUTOMATIC"/""
+      # Not really necessary for "manual" atm, but it may change in future
+      if ticketmode == "MANUAL" || ticketmode == "manual"
+        isManual = true
+      else
+        isManual = false
       end
 
       UI.OpenDialog(
@@ -241,6 +251,8 @@ module Yast
             ),
             VSpacing(1),
             HBox(
+              CheckBox(Id(:tmode), Opt(:notify), _("Manual mode"), isManual),
+              HSpacing(2),
               InputField(Id(:timeout), Opt(:hstretch), _("timeout"), timeout),
               HSpacing(2),
               InputField(Id(:retries), Opt(:hstretch), _("retries"), retries),
@@ -287,6 +299,12 @@ module Yast
           num_retries = Builtins.tointeger(retries)
           num_weights = Builtins.tointeger(weights)
 
+          if UI.QueryWidget(:tmode, :Value)
+            ticketmode = "MANUAL"
+          else
+            ticketmode = "AUTOMATIC"
+          end
+
           if num_timeout == nil && timeout != ""
             Popup.Message(_("timeout is invalid"))
           elsif num_expire == nil && expire != ""
@@ -309,6 +327,7 @@ module Yast
             temp_ticket["retries"] = retries
             temp_ticket["weights"] = weights
             temp_ticket["before-acquire-handler"] = beforeah
+            temp_ticket["mode"] = ticketmode
 
             ret = {ticket => deep_copy(temp_ticket)}
             break
@@ -369,8 +388,10 @@ module Yast
           weights = Ops.get_string(value,"weights","")
           expire = Ops.get_string(value,"expire","")
           beforeah = Ops.get_string(value,"before-acquire-handler","")
+          ticketmode = Ops.get_string(value,"mode","")
 
-          items = items.push(Item(Id(i), tname, timeout, retries, weights, expire, acquireafter, beforeah))
+          items = items.push(Item(Id(i), tname, ticketmode, timeout,
+                    retries, weights, expire, acquireafter, beforeah))
           i += 1
         end
       end
@@ -671,19 +692,33 @@ module Yast
             next
           end
 
-          #Same to UI.QueryWidget(:arbitrator_box, :Value).to_s == ""
-          if temp_arbitrator.size == 0
-            Popup.Message(_("arbitrator have to be filled!"))
-            next
-          end
-
-          if temp_site.size == 0
-            Popup.Message(_("site have to be filled!"))
-            next
-          end
-
           if temp_ticket.size == 0
             Popup.Message(_("ticket have to be filled!"))
+            next
+          end
+
+          hasAutoTicket = false
+
+          temp_ticket.each do |ticket|
+            ticket.each_value do |value|
+              tmode = value.fetch("mode", "AUTOMATIC")
+              if tmode != "MANUAL" && tmode != "manual"
+                hasAutoTicket = true
+                break
+              end
+            end
+          end
+
+          if temp_arbitrator.size == 0 && hasAutoTicket &&
+            0 == temp_site.size % 2
+            Popup.Message(_("arbitrator have to be filled when even \
+number of sites with normal automatic ticket!"))
+            next
+          end
+
+          #Same to UI.QueryWidget(:site_box, :Value).to_s == ""
+          if temp_site.size == 0
+            Popup.Message(_("site have to be filled!"))
             next
           end
         end

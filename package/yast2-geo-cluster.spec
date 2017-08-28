@@ -17,7 +17,7 @@
 
 
 Name:           yast2-geo-cluster
-Version:        4.0.0
+Version:        4.0.1
 Release:        0
 
 %define _fwdefdir /etc/sysconfig/SuSEfirewall2.d/services
