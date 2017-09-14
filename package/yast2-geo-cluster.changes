@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Sep 14 15:27:03 UTC 2017 - nwang@suse.com
+
+- fate#323863. support autoyast.
+- Version 3.3.0
+
+-------------------------------------------------------------------
 Wed Mar  1 10:15:02 UTC 2017 - nwang@suse.com
 
 - bsc#1027405. Move the firewall rule file to booth.
