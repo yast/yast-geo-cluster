@@ -168,7 +168,7 @@ module Yast
     def empty_ticket(ticket)
       empty = true
       @global_conf_ticket.each_key do |key|
-        empty = false if ticket[key] != ""
+        empty = false if ticket[key] && ticket[key] != ""
       end
       empty
     end
@@ -221,6 +221,11 @@ module Yast
       @global_conf_single.each_key do |key|
         Builtins.y2milestone("Writing global_conf %1 = %2\n", key, conf[key])
 
+        if !conf[key]
+          Builtins.y2debug("Skip the nil conf: %1 = %2\n", key, conf[key])
+          next
+        end
+
         if key == "authfile"
           # SCR won't write authfile when empty("")
           # Convert relative path to absolute path
@@ -268,6 +273,11 @@ module Yast
           error_flag = true if !ret
         else
           @global_conf_ticket.each_key do |key|
+            if !value[key]
+              Builtins.y2debug("Skip the nil ticket settings: %1 = %2\n", key, value[key])
+              next
+            end
+
             ret = SCR.Write((temp_ticket_path+Builtins.topath(tname)+Builtins.topath(key)), value[key])
             Builtins.y2milestone("Writing ticket settings: %1 = %2\n", key, value[key])
             error_flag = true if !ret
@@ -431,24 +441,108 @@ module Yast
     # @return [Boolean] True on success
     def Import(settings)
       settings = deep_copy(settings)
-      # TODO FIXME: your code here (fill the above mentioned variables)...
+
+      if settings != nil
+        @global_files = {}
+
+        settings.each do |booth_xml|
+          conf = {}
+
+          confname = booth_xml["filename"]
+          @global_conf_single.each_key do |key|
+            conf[key] = booth_xml[key]
+          end
+
+          @global_conf_list.each do |key|
+            conf[key] = booth_xml[key]
+          end
+
+          all_tickets = {}
+          booth_xml["ticket"].each do |ticket_xml|
+            tmp_ticket = {}
+
+            ticketname = ticket_xml["ticketname"]
+            @global_conf_ticket.each_key do |key|
+              tmp_ticket[key] = ticket_xml[key]
+            end
+
+            all_tickets[ticketname] = tmp_ticket
+          end
+          conf["ticket"] = all_tickets
+
+          @global_files[confname] = conf
+        end
+
+      end
+
+      Builtins.y2milestone("Import: %1", @global_files)
+
       true
     end
 
-    # Dump the geo-cluster settings to a single map
+    # Dump the geo-cluster settings to a list
     # (For use by autoinstallation.)
     # @return [Hash] Dumped settings (later acceptable by Import ())
     def Export
-      # TODO FIXME: your code here (return the above mentioned variables)...
-      {}
+      # Use list instead of hash, since should "Avoid using configuration
+      # data as the key in a hash key/value pair."
+      # refer: https://yastgithubio.readthedocs.io/en/latest/autoyast-development/
+      ret = []
+
+      @global_files.each_key do |filename|
+        booth_conf = @global_files[filename]
+
+        tmp_conf = {}
+        tmp_conf["filename"] = filename
+
+        @global_conf_single.each_key do |key|
+          tmp_conf[key] = booth_conf[key]
+        end
+
+        @global_conf_list.each do |key|
+          tmp_conf[key] = booth_conf[key]
+        end
+
+        ticket = []
+        booth_conf["ticket"].each do |tname, value|
+          tmp_ticket = {}
+          ticket_conf = booth_conf["ticket"][tname]
+
+          tmp_ticket["ticketname"] = tname
+          @global_conf_ticket.each_key do |key|
+            tmp_ticket[key] = ticket_conf[key]
+          end
+
+          ticket.push(tmp_ticket)
+        end
+
+        tmp_conf["ticket"] = ticket
+
+        ret.push(tmp_conf)
+      end
+
+      deep_copy(ret)
     end
 
     # Create a textual summary and a list of unconfigured cards
     # @return summary of the current configuration
     def Summary
-      # TODO FIXME: your code here...
-      # Configuration summary text for autoyast
-      [_("Configuration summary..."), []]
+      summary = Summary.AddHeader("", _("Configuration Summary"))
+
+      Builtins.y2milestone("Summary: %1", @global_files)
+
+      if @global_files.size > 0
+        @global_files.each_key do |conf, value|
+          summary = Summary.AddLine(
+            summary,
+            "Configuration file #{conf}."
+          )
+        end
+      else
+        summary = Summary.AddLine(summary, Summary.NotConfigured)
+      end
+
+      summary
     end
 
     # Create an overview table with all configured cards
@@ -463,8 +557,7 @@ module Yast
     # installed.
     # @return [Hash] with 2 lists.
     def AutoPackages
-      # TODO FIXME: your code here...
-      { "install" => [], "remove" => [] }
+      { "install" => ["booth"], "remove" => [] }
     end
 
     publish :function => :Modified, :type => "boolean ()"

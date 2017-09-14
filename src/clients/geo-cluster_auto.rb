@@ -56,9 +56,10 @@ module Yast
       if Ops.greater_than(Builtins.size(WFM.Args), 0) &&
           Ops.is_string?(WFM.Args(0))
         @func = Convert.to_string(WFM.Args(0))
+
         if Ops.greater_than(Builtins.size(WFM.Args), 1) &&
-            Ops.is_map?(WFM.Args(1))
-          @param = Convert.to_map(WFM.Args(1))
+            Ops.is_list?(WFM.Args(1))
+          @param = Convert.to_list(WFM.Args(1))
         end
       end
       Builtins.y2debug("func=%1", @func)
@@ -66,44 +67,44 @@ module Yast
 
       # Create a summary
       if @func == "Summary"
-        @ret = Ops.get_string(geo-cluster.Summary, 0, "")
+        @ret = GeoCluster.Summary
       # Reset configuration
       elsif @func == "Reset"
-        geo-cluster.Import({})
+        GeoCluster.Import({})
         @ret = {}
       # Change configuration (run AutoSequence)
       elsif @func == "Change"
         @ret = GeoClusterAutoSequence()
       # Import configuration
       elsif @func == "Import"
-        @ret = geo-cluster.Import(@param)
+        @ret = GeoCluster.Import(@param)
       # Return actual state
       elsif @func == "Export"
-        @ret = geo-cluster.Export
+        @ret = GeoCluster.Export
       # Return needed packages
       elsif @func == "Packages"
-        @ret = geo-cluster.AutoPackages
+        @ret = GeoCluster.AutoPackages
       # Read current state
       elsif @func == "Read"
         Yast.import "Progress"
         @progress_orig = Progress.set(false)
-        @ret = geo-cluster.Read
+        @ret = GeoCluster.Read
         Progress.set(@progress_orig)
-      # Write givven settings
+      # Write given settings
       elsif @func == "Write"
         Yast.import "Progress"
         @progress_orig = Progress.set(false)
-        geo-cluster.SetWriteOnly(true)
-        @ret = geo-cluster.Write
+        GeoCluster.SetWriteOnly(true)
+        @ret = GeoCluster.Write
         Progress.set(@progress_orig)
       # did configuration changed
       # return boolean
       elsif @func == "GetModified"
-        @ret = geo-cluster.Modified
+        @ret = GeoCluster.Modified
       # set configuration as changed
       # return boolean
       elsif @func == "SetModified"
-        geo-cluster.SetModified(true)
+        GeoCluster.SetModified(true)
         @ret = true
       else
         Builtins.y2error("Unknown function: %1", @func)
