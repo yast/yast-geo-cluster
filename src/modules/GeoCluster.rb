@@ -351,7 +351,6 @@ module Yast
     def Write
       # GeoCluster write dialog caption
       caption = _("Saving Geo Cluster Configuration")
-      ret = false
 
       # TODO FIXME And set the right number of stages
       steps = 2
