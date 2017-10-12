@@ -323,7 +323,6 @@ module Yast
     #fill arbitrator_box with global_arbitrators
     def fill_arbitrators_entries(arbitrators)
       i = 0
-      ret = 0
       current = 0
       items = []
       arbitrators.each do |arbitrator|
@@ -341,7 +340,6 @@ module Yast
     #fill site_box with global_site
     def fill_sites_entries(sites)
       i = 0
-      ret = 0
       current = 0
       items = []
       sites.each do |site|
@@ -359,7 +357,6 @@ module Yast
     #fill ticket_box with global_ticket
     def fill_ticket_entries(tickets)
       i = 0
-      ret = 0
       current = 0
       items = []
 
@@ -388,7 +385,6 @@ module Yast
     #fill confs with global_files
     def fill_conf_entries
       i = 0
-      ret = 0
       current = 0
       items = []
       conf_list = []
@@ -430,11 +426,7 @@ module Yast
         }
       )
       firewall_layout = Ops.get_term(firewall_widget, "custom_widget", VBox())
-      contents = VBox(
-        VSpacing(1),
-        Frame("firewall settings", firewall_layout),
-        VStretch()
-      )
+
       Wizard.SetContents(
         caption,
         firewall_layout,

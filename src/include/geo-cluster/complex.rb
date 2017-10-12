@@ -82,11 +82,6 @@ module Yast
       # GeoCluster summary dialog caption
       caption = _("Geo Cluster Configuration")
 
-      # FIXME
-      summary = GeoCluster.Summary
-      unconfigured = Ops.get_list(summary, 1, [])
-      configured = Ops.get_string(summary, 0, "")
-
       # Frame label
       contents = nil
       #Wizard_hw::DetectedContent(_("GeoCluster to Configure"),
@@ -141,8 +136,6 @@ module Yast
     def OverviewDialog
       # GeoCluster overview dialog caption
       caption = _("Geo Cluster Overview")
-
-      overview = GeoCluster.Overview
 
       # FIXME table header
       contents = nil
