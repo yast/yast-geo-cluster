@@ -25,6 +25,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 Source0:        %{name}-%{version}.tar.bz2
 
 Requires:       yast2
+Requires:       autoyast2-installation
 BuildRequires:  perl-XML-Writer
 BuildRequires:  update-desktop-files
 BuildRequires:  yast2
@@ -61,6 +62,7 @@ Group:          System/YaST
 %{yast_desktopdir}/geo-cluster.desktop
 %{yast_scrconfdir}/*.scr
 %{yast_agentdir}/ag_booth
+%{yast_schemadir}/autoyast/rnc/geo-cluster.rnc
 %doc %{yast_docdir}
 
 %changelog
