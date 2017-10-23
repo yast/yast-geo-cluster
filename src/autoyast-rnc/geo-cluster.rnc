@@ -6,9 +6,9 @@ namespace config = "http://www.suse.com/1.0/configns"
 LIST = attribute config:type { "list" }
 
 geo-cluster =
-  element geo-cluster { 
+  element geo-cluster {
       LIST,
-      booth_config* 
+      booth_config*
   }
 
 int_noempty = xsd:integer | empty

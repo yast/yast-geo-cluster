@@ -16,6 +16,7 @@ X-SuSE-YaST-AutoInstClonable=true
 X-SuSE-YaST-Geometry=
 X-SuSE-YaST-SortKey=
 X-SuSE-YaST-AutoInstResource=geo-cluster
+X-SuSE-YaST-AutoInstSchema=geo-cluster.rnc
 
 Icon=yast-geo-cluster
 Exec=/sbin/yast2 geo-cluster 
