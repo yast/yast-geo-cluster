@@ -26,6 +26,10 @@ scrconf_DATA = \
 agent_SCRIPTS = \
   servers_non_y2/ag_booth
 
-EXTRA_DIST = $(module_DATA) $(client_DATA) $(ynclude_DATA) $(desktop_DATA) $(scrconf_DATA) $(agent_SCRIPTS)
+schemafilesdir = $(schemadir)/autoyast/rnc
+schemafiles_DATA = \
+  autoyast-rnc/geo-cluster.rnc
+
+EXTRA_DIST = $(module_DATA) $(client_DATA) $(ynclude_DATA) $(desktop_DATA) $(scrconf_DATA) $(agent_SCRIPTS) $(schemafiles_DATA)
 
 include $(top_srcdir)/Makefile.am.common
