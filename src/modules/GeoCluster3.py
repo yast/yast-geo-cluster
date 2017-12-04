@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 
 # ------------------------------------------------------------------------------
 # Copyright (c) 2006 Novell, Inc. All Rights Reserved.
