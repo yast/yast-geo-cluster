@@ -29,6 +29,7 @@
 # Representation of the configuration of geo-cluster.
 # Input and output routines.
 require "yast"
+require "y2firewall/firewalld"
 
 module Yast
   class GeoClusterClass < Module
@@ -39,8 +40,6 @@ module Yast
       Yast.import "Report"
       Yast.import "Summary"
       Yast.import "Message"
-      Yast.import "SuSEFirewall"
-      Yast.import "SuSEFirewallServices"
 
       # Data was modified?
       @modified = false
@@ -304,10 +303,10 @@ module Yast
         caption,
         " ",
         steps,
-        [_("Read the previous settings"), _("Read SuSEFirewall Settings")],
+        [_("Read the previous settings"), _("Read Firewall Settings")],
         [
           _("Reading the previous settings..."),
-          _("Read SuSEFirewall Settings"),
+          _("Read Firewall Settings"),
           _("Finished")
         ],
         ""
@@ -332,8 +331,8 @@ module Yast
       Report.Error(Message.CannotReadCurrentSettings) if false
       Builtins.sleep(sl)
 
-      # read the SuSEfirewall2
-      SuSEFirewall.Read
+      # read the firewalld
+      firewalld.read
 
       return false if Abort()
       # Progress finished
@@ -367,13 +366,13 @@ module Yast
           # Progress stage 1/2
           _("Write the settings"),
           # Progress stage 2/2
-          _("Write the SuSEfirewall settings")
+          _("Write the Firewall settings")
         ],
         [
           # Progress step 1/2
           _("Writing the settings..."),
           # Progress step 2/2
-          _("Writing the SuSEFirewall settings"),
+          _("Writing the Firewall settings"),
           # Progress finished
           _("Finished")
         ],
@@ -412,14 +411,14 @@ module Yast
         end
       end
 
-      SuSEFirewallServices.SetNeededPortsAndProtocols(
-        "service:booth",
-        # Use the same udp port for tcp.
-        { "tcp_ports" => open_ports,
-          "udp_ports" => open_ports }
-      )
+      # Use the same udp port for tcp.
+      begin
+        Y2Firewall::Firewalld::Service.modify_ports(name: "booth", tcp_ports: open_ports, udp_ports: open_ports)
+      rescue Y2Firewall::Firewalld::Service::NotFound
+        y2error("Firewalld 'cluster' service is not available.")
+      end
 
-      SuSEFirewall.Write
+      firewalld.write
       # Error message
       Report.Error(Message.SuSEConfigFailed) if false
       Builtins.sleep(sl)
@@ -579,6 +578,13 @@ module Yast
     publish :function => :Summary, :type => "list ()"
     publish :function => :Overview, :type => "list ()"
     publish :function => :AutoPackages, :type => "map ()"
+
+  private
+
+    def firewalld
+      Y2Firewall::Firewalld.instance
+    end
+
   end
 
   GeoCluster = GeoClusterClass.new

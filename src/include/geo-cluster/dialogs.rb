@@ -439,9 +439,10 @@ module Yast
       caption = _("Firewall Configuration")
       firewall_widget = CWMFirewallInterfaces.CreateOpenFirewallWidget(
         {
-          #servie:geo-cluster is the  name of /etc/sysconfig/SuSEfirewall2.d/services/geo-cluster
+          #booth is the name of /usr/lib/firewalld.d/services/booth.xml
+          #managed by booth package
           "services"        => [
-            "service:booth"
+            "booth"
           ],
           "display_details" => true
         }
