@@ -17,23 +17,24 @@
 
 
 Name:           yast2-geo-cluster
-Version:        4.0.2
+Version:        4.0.3
 Release:        0
 
-%define _fwdefdir /etc/sysconfig/SuSEfirewall2.d/services
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 Source0:        %{name}-%{version}.tar.bz2
 
-Requires:       yast2
-Requires:       autoyast2-installation
 BuildRequires:  perl-XML-Writer
 BuildRequires:  update-desktop-files
-BuildRequires:  yast2
+# SuSEFirewall2 replaced by Firewalld(fate#323460)
+BuildRequires:  yast2 >= 4.0.39
 BuildRequires:  yast2-devtools >= 3.1.10
 BuildRequires:  yast2-testsuite
 
 BuildArch:      noarch
 
+# SuSEFirewall2 replaced by Firewalld(fate#323460)
+Requires:       yast2 >= 4.0.39
+Requires:       autoyast2-installation
 Requires:       yast2-ruby-bindings >= 1.0.0
 
 Summary:        Configuration of booth

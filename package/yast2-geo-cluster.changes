@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Jan 26 07:09:26 UTC 2018 - nwang@suse.com
+
+- SuSEFirewall2 replaced by firewalld(fate#323460)
+- Version 4.0.3
+
+-------------------------------------------------------------------
 Fri Dec  1 06:22:22 UTC 2017 - nwang@suse.com
 
 - fate#323526, support python3.
