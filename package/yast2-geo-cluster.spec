@@ -26,14 +26,14 @@ Source0:        %{name}-%{version}.tar.bz2
 BuildRequires:  perl-XML-Writer
 BuildRequires:  update-desktop-files
 # SuSEFirewall2 replaced by Firewalld(fate#323460)
-BuildRequires:  yast2 >= 4.0.37
+BuildRequires:  yast2 >= 4.0.39
 BuildRequires:  yast2-devtools >= 3.1.10
 BuildRequires:  yast2-testsuite
 
 BuildArch:      noarch
 
 # SuSEFirewall2 replaced by Firewalld(fate#323460)
-Requires:       yast2 >= 4.0.37
+Requires:       yast2 >= 4.0.39
 Requires:       autoyast2-installation
 Requires:       yast2-ruby-bindings >= 1.0.0
 
