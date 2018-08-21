@@ -38,7 +38,7 @@ Requires:       autoyast2-installation
 Requires:       yast2-ruby-bindings >= 1.0.0
 
 Summary:        Configuration of booth
-License:        GPL-2.0
+License:        GPL-2.0-only
 Group:          System/YaST
 
 %description
