@@ -65,5 +65,6 @@ Group:          System/YaST
 %{yast_agentdir}/ag_booth
 %{yast_schemadir}/autoyast/rnc/geo-cluster.rnc
 %doc %{yast_docdir}
+%license COPYING
 
 %changelog
