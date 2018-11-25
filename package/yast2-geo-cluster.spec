@@ -17,7 +17,7 @@
 
 
 Name:           yast2-geo-cluster
-Version:        4.0.4
+Version:        4.1.0
 Release:        0
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
@@ -65,6 +65,7 @@ Group:          System/YaST
 %{yast_agentdir}/ag_booth
 %{yast_schemadir}/autoyast/rnc/geo-cluster.rnc
 %doc %{yast_docdir}
+%{_datadir}/icons/*
 %license COPYING
 
 %changelog
