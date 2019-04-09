@@ -51,6 +51,14 @@ Group:          System/YaST
 
 %files
 %defattr(-,root,root)
+%dir %{yast_yncludedir}
+%dir %{yast_moduledir}/
+%dir %{yast_desktopdir}
+%dir %{yast_scrconfdir}
+%dir %{yast_agentdir}
+%dir %{yast_schemadir}
+%dir %{yast_schemadir}/autoyast
+%dir %{yast_schemadir}/autoyast/rnc
 %dir %{yast_yncludedir}/geo-cluster
 %{yast_yncludedir}/geo-cluster/*
 %{yast_clientdir}/geo-cluster.rb
