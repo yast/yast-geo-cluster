@@ -18,7 +18,7 @@ ynclude_DATA = \
   include/geo-cluster/wizards.rb
 
 desktop_DATA = \
-  desktop/geo-cluster.desktop
+  desktop/org.openSUSE.YaST.GeoCluster.desktop
 
 scrconf_DATA = \
   scrconf/booth.scr
