@@ -12,30 +12,29 @@
 # license that conforms to the Open Source Definition (Version 1.9)
 # published by the Open Source Initiative.
 
-# Please submit bugfixes or comments via http://bugs.opensuse.org/
+# Please submit bugfixes or comments via https://bugs.opensuse.org/
 #
 
 
 Name:           yast2-geo-cluster
-Version:        4.2.0
+Version:        4.2.1
 Release:        0
+Summary:        Configuration of booth
+License:        GPL-2.0-only
+Group:          System/YaST
+Url:            https://github.com/yast/yast-geo-cluster
 
-BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 Source0:        %{name}-%{version}.tar.bz2
 
 BuildRequires:  update-desktop-files
-BuildRequires:  yast2-devtools >= 3.1.10
-
-BuildArch:      noarch
+BuildRequires:  yast2-devtools >= 4.2.2
 
 # SuSEFirewall2 replaced by Firewalld(fate#323460)
 Requires:       yast2 >= 4.0.39
 Requires:       autoyast2-installation
 Requires:       yast2-ruby-bindings >= 1.0.0
 
-Summary:        Configuration of booth
-License:        GPL-2.0-only
-Group:          System/YaST
+BuildArch:      noarch
 
 %description
 -
@@ -48,26 +47,17 @@ Group:          System/YaST
 
 %install
 %yast_install
+%yast_metainfo
 
 %files
-%defattr(-,root,root)
-%dir %{yast_yncludedir}
-%dir %{yast_moduledir}/
-%dir %{yast_desktopdir}
-%dir %{yast_scrconfdir}
-%dir %{yast_agentdir}
-%dir %{yast_schemadir}
-%dir %{yast_schemadir}/autoyast
-%dir %{yast_schemadir}/autoyast/rnc
-%dir %{yast_yncludedir}/geo-cluster
-%{yast_yncludedir}/geo-cluster/*
-%{yast_clientdir}/geo-cluster.rb
-%{yast_clientdir}/geo-cluster_*.rb
-%{yast_moduledir}/*
-%{yast_desktopdir}/geo-cluster.desktop
-%{yast_scrconfdir}/*.scr
-%{yast_agentdir}/ag_booth
-%{yast_schemadir}/autoyast/rnc/geo-cluster.rnc
+%{yast_yncludedir}
+%{yast_moduledir}
+%{yast_desktopdir}
+%{yast_scrconfdir}
+%{yast_agentdir}
+%{yast_schemadir}
+%{yast_clientdir}
+%{yast_metainfodir}
 %doc %{yast_docdir}
 %{yast_icondir}
 %license COPYING

@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Fri May 31 12:30:46 UTC 2019 - Stasiek Michalski <hellcp@mailbox.org>
+
+- Add metainfo (fate#319035)
+- Revamp spec
+- Replace GenericName with Comment
+- 4.2.1
+
+-------------------------------------------------------------------
 Thu Apr  4 07:38:17 UTC 2019 - Ladislav Slezák <lslezak@suse.cz>
 
 - Removed unused BuildRequires (bsc#1131234)

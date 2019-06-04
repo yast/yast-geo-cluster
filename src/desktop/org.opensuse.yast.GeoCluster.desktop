@@ -22,7 +22,8 @@ X-SuSE-YaST-Keywords=cluster,availability,high
 Icon=yast-geo-cluster
 Exec=/sbin/yast2 geo-cluster 
 
-Name=Geo Cluster
-GenericName=Configuration Geo Cluster
+Name=YaST Geo Cluster
+GenericName=Geo Cluster
+Comment=Configure Geo Cluster
 X-KDE-SubstituteUID=true
 StartupNotify=true
