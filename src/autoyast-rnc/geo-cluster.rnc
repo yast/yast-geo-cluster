@@ -2,8 +2,7 @@ default namespace = "http://www.suse.com/1.0/yast2ns"
 namespace a = "http://relaxng.org/ns/compatibility/annotations/1.0"
 namespace config = "http://www.suse.com/1.0/configns"
 
-# Refer to common.rnc in /usr/share/YaST2/schema/autoyast/rnc
-LIST = attribute config:type { "list" }
+include "common.rnc"
 
 geo-cluster =
   element geo-cluster {
@@ -11,14 +10,14 @@ geo-cluster =
       booth_config*
   }
 
-int_noempty = xsd:integer | empty
+int_noempty = STRING_ATTR, (xsd:integer | empty)
 
-filename = element filename { text }
-authfile = element authfile { text }
+filename = element filename { STRING }
+authfile = element authfile { STRING }
 port = element port { int_noempty }
-transport = element transport { text }
+transport = element transport { STRING }
 
-simple_listentry = element listentry { text }
+simple_listentry = element listentry { STRING }
 
 arbitrators =
   element arbitrator {
@@ -33,16 +32,18 @@ sites =
   }
 
 acquire-after = element acquire-after { int_noempty }
-before-acquire-handler = element before-acquire-handler { text }
+before-acquire-handler = element before-acquire-handler { STRING }
 expire = element expire { int_noempty }
 retries = element retries { int_noempty }
-ticketname = element ticketname { text }
+ticketname = element ticketname { STRING }
 timeout = element timeout { int_noempty }
 weights = element weights { int_noempty }
-mode = element mode { text }
+mode = element mode { STRING }
 
 ticket_listentry =
   element listentry {
+    MAP,
+    (
       acquire-after? &
       before-acquire-handler? &
       expire? &
@@ -51,6 +52,7 @@ ticket_listentry =
       timeout? &
       weights? &
       mode?
+    )
   }
 
 tickets =
@@ -61,6 +63,8 @@ tickets =
 
 booth_config =
   element listentry {
+    MAP,
+    (
       filename? &
       authfile? &
       port? &
@@ -68,6 +72,7 @@ booth_config =
       arbitrators? &
       sites? &
       tickets?
+    )
   }
 
 start = geo-cluster
