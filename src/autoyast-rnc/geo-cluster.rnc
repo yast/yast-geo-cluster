@@ -4,75 +4,40 @@ namespace config = "http://www.suse.com/1.0/configns"
 
 include "common.rnc"
 
+int_noempty = STRING_ATTR, (xsd:integer | empty)
+simple_listentry = element listentry { STRING }
+
 geo-cluster =
   element geo-cluster {
       LIST,
       booth_config*
   }
 
-int_noempty = STRING_ATTR, (xsd:integer | empty)
-
-filename = element filename { STRING }
-authfile = element authfile { STRING }
-port = element port { int_noempty }
-transport = element transport { STRING }
-
-simple_listentry = element listentry { STRING }
-
-arbitrators =
-  element arbitrator {
-      LIST,
-      simple_listentry*
+booth_config =
+  element listentry {
+    MAP,
+    (
+      element filename { STRING } ? &
+      element authfile { STRING } ? &
+      element port { int_noempty } ? &
+      element transport { STRING } ? &
+      element arbitrator { LIST, simple_listentry* } ? &
+      element site { LIST, simple_listentry* } ? &
+      element ticket { LIST, ticket_listentry* } ?
+    )
   }
-
-sites =
-  element site {
-      LIST,
-      simple_listentry*
-  }
-
-acquire-after = element acquire-after { int_noempty }
-before-acquire-handler = element before-acquire-handler { STRING }
-expire = element expire { int_noempty }
-retries = element retries { int_noempty }
-ticketname = element ticketname { STRING }
-timeout = element timeout { int_noempty }
-weights = element weights { int_noempty }
-mode = element mode { STRING }
 
 ticket_listentry =
   element listentry {
     MAP,
     (
-      acquire-after? &
-      before-acquire-handler? &
-      expire? &
-      retries? &
-      ticketname? &
-      timeout? &
-      weights? &
-      mode?
+      element acquire-after { int_noempty } ? &
+      element before-acquire-handler { STRING } ? &
+      element expire { int_noempty } ? &
+      element retries { int_noempty } ? &
+      element ticketname { STRING } ? &
+      element timeout { int_noempty } ? &
+      element weights { int_noempty } ? &
+      element mode { STRING } ?
     )
   }
-
-tickets =
-  element ticket {
-      LIST,
-      ticket_listentry*
-  }
-
-booth_config =
-  element listentry {
-    MAP,
-    (
-      filename? &
-      authfile? &
-      port? &
-      transport? &
-      arbitrators? &
-      sites? &
-      tickets?
-    )
-  }
-
-start = geo-cluster
