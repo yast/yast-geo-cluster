@@ -1,7 +1,7 @@
 #
 # spec file for package yast2-geo-cluster
 #
-# Copyright (c) 2019 SUSE LINUX GmbH, Nuernberg, Germany.
+# Copyright (c) 2021 SUSE LLC
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -17,33 +17,28 @@
 
 
 Name:           yast2-geo-cluster
-Version:        4.4.0
+Version:        4.4.1
 Release:        0
 Summary:        Configuration of booth
 License:        GPL-2.0-only
 Group:          System/YaST
-Url:            https://github.com/yast/yast-geo-cluster
-
+URL:            https://github.com/yast/yast-geo-cluster
 Source0:        %{name}-%{version}.tar.bz2
-
 BuildRequires:  update-desktop-files
 BuildRequires:  yast2
 BuildRequires:  yast2-devtools >= 4.2.2
-
 # SuSEFirewall2 replaced by Firewalld(fate#323460)
 Requires:       autoyast2-installation
 Requires:       yast2 >= 4.0.39
 Requires:       yast2-ruby-bindings >= 1.0.0
-
 Supplements:    autoyast(geo-cluster)
-
 BuildArch:      noarch
 
 %description
 -
 
 %prep
-%setup -n %{name}-%{version}
+%setup -q
 
 %build
 %yast_build
@@ -53,6 +48,7 @@ BuildArch:      noarch
 %yast_metainfo
 
 %files
+%license COPYING
 %{yast_yncludedir}
 %{yast_moduledir}
 %{yast_desktopdir}
@@ -61,8 +57,6 @@ BuildArch:      noarch
 %{yast_schemadir}
 %{yast_clientdir}
 %{yast_metainfodir}
-%doc %{yast_docdir}
 %{yast_icondir}
-%license COPYING
 
 %changelog
